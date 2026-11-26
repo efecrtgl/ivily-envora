@@ -24,8 +24,8 @@ Durum işaretleri: ✅ tamamlandı · 🚧 sürüyor · ⏳ planlandı
 | 13 | Ortam analizi (zekâ) | ✅ |
 | 14 | Geliştirici aracı keşfi ve şablonlar | ✅ |
 | 15 | Pano ve etkinlik merkezi | ✅ |
-| 16 | Güvenlik sıkılaştırması | 🚧 |
-| 17 | Ivily ekosistemi (IEP) hazırlığı | ⏳ |
+| 16 | Güvenlik sıkılaştırması | ✅ |
+| 17 | Ivily ekosistemi (IEP) hazırlığı | 🚧 |
 | 18 | Performans iyileştirme | ⏳ |
 | 19 | Test ve güvenilirlik | ⏳ |
 | 20 | Yükleyici ve güncelleme sistemi | ⏳ |
