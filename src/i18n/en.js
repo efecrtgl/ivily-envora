@@ -1,5 +1,8 @@
 // English (secondary language). Must have exactly the same keys as tr.js.
+import env from './en/env.js';
+
 export default {
+  ...env,
   app: {
     name: 'Ivily Envora',
     tagline: 'Environment manager',
@@ -10,6 +13,7 @@ export default {
     groupWorkflows: 'Workflows',
     groupSystem: 'System',
     dashboard: 'Dashboard',
+    variables: 'Variables',
     settings: 'Settings',
   },
   common: {
@@ -92,6 +96,17 @@ export default {
     backupDb: 'Back up database',
     backupDone: 'Database backup created.',
     license: 'License',
+    security: 'Security',
+    autoHide: 'Auto-hide revealed values',
+    autoHideHint: 'A revealed sensitive value is masked again after this time (0 = off).',
+    warnOnCopy: 'Warn before copying a sensitive value',
+    clipboardClear: 'Clear clipboard',
+    clipboardClearHint: 'A copied sensitive value is removed from the clipboard after this time; if you copy something else meanwhile, it is left alone (0 = off).',
+    seconds: 'seconds',
+    overrides: 'Sensitivity overrides',
+    overridesHint: 'Variable names whose automatic classification has been changed.',
+    noOverrides: 'No overrides.',
+    clearOverride: 'Back to automatic',
     reset: 'Reset settings',
     resetBody: 'All settings return to their defaults. Your profiles, projects and snapshots are not affected.',
     resetDone: 'Settings were reset to defaults.',
@@ -114,6 +129,14 @@ export default {
     unsupported: 'This operation is not supported.',
     internal: 'An unexpected error occurred.',
     invalid_json: 'Invalid JSON',
+    invalid_name_empty: 'The variable name cannot be empty.',
+    invalid_name_length: 'The variable name is too long',
+    invalid_name_equals: 'The variable name cannot contain "="',
+    invalid_name_control: 'The variable name cannot contain control characters.',
+    invalid_value_nul: 'The value cannot contain a NUL character.',
+    invalid_value_length: 'The value is too long',
+    invalid_setting: 'Invalid setting',
+    invalid_path: 'Invalid path',
     not_in_tauri: 'This operation is only available in the desktop application.',
   },
 };

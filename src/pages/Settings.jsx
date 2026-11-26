@@ -51,6 +51,41 @@ export function NumberSetting({ value, min, max, onCommit, suffix }) {
   );
 }
 
+function OverridesSection() {
+  const t = useT();
+  const toast = useToast();
+  const [items, setItems] = useState(null);
+  const load = useCallback(() => {
+    if (inTauri()) api.sensitivityList().then(setItems).catch(() => setItems([]));
+    else setItems([]);
+  }, []);
+  useEffect(load, [load]);
+  const clear = async (name) => {
+    try {
+      await api.sensitivitySet(name, null);
+      load();
+    } catch (e) {
+      toast.error(errorText(t, e));
+    }
+  };
+  if (!items) return null;
+  if (!items.length) return <p className="small faint">{t('settings.noOverrides')}</p>;
+  return (
+    <div className="list">
+      {items.map((o) => (
+        <div key={o.name} className="list-item" style={{ paddingLeft: 0, paddingRight: 0 }}>
+          <span className="mono small">{o.name}</span>
+          <Badge tone={o.sensitive ? 'warn' : undefined}>{o.sensitive ? t('vars.sensYes') : t('vars.sensNo')}</Badge>
+          <span className="spacer" />
+          <Button size="sm" variant="ghost" icon="undo" onClick={() => clear(o.name)}>
+            {t('settings.clearOverride')}
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DataSection() {
   const t = useT();
   const toast = useToast();
@@ -168,6 +203,23 @@ export default function Settings() {
           <SettingRow label={t('settings.reduceMotion')} hint={t('settings.reduceMotionHint')}>
             <Toggle label={t('settings.reduceMotion')} checked={s.appearance.reduceMotion} onChange={change('appearance.reduceMotion')} />
           </SettingRow>
+        </Card>
+
+        <Card title={t('settings.security')} icon="shield">
+          <SettingRow label={t('settings.autoHide')} hint={t('settings.autoHideHint')}>
+            <NumberSetting value={s.security.autoHideSeconds} min={0} max={3600} suffix={t('settings.seconds')} onCommit={change('security.autoHideSeconds')} />
+          </SettingRow>
+          <SettingRow label={t('settings.warnOnCopy')}>
+            <Toggle label={t('settings.warnOnCopy')} checked={s.security.warnOnCopy} onChange={change('security.warnOnCopy')} />
+          </SettingRow>
+          <SettingRow label={t('settings.clipboardClear')} hint={t('settings.clipboardClearHint')}>
+            <NumberSetting value={s.security.clipboardClearSeconds} min={0} max={600} suffix={t('settings.seconds')} onCommit={change('security.clipboardClearSeconds')} />
+          </SettingRow>
+          <div style={{ paddingTop: 12 }}>
+            <div className="setting-label">{t('settings.overrides')}</div>
+            <div className="field-hint" style={{ marginBottom: 6 }}>{t('settings.overridesHint')}</div>
+            <OverridesSection />
+          </div>
         </Card>
 
         <Card title={t('settings.activity')} icon="activity">

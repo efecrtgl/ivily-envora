@@ -1,5 +1,8 @@
 // Türkçe (birincil dil). Yeni anahtarlar en.js dosyasına da eklenmelidir.
+import env from './tr/env.js';
+
 export default {
+  ...env,
   app: {
     name: 'Ivily Envora',
     tagline: 'Ortam yöneticisi',
@@ -10,6 +13,7 @@ export default {
     groupWorkflows: 'İş akışları',
     groupSystem: 'Sistem',
     dashboard: 'Pano',
+    variables: 'Değişkenler',
     settings: 'Ayarlar',
   },
   common: {
@@ -92,6 +96,17 @@ export default {
     backupDb: 'Veritabanını yedekle',
     backupDone: 'Veritabanı yedeği oluşturuldu.',
     license: 'Lisans',
+    security: 'Güvenlik',
+    autoHide: 'Gösterilen değeri otomatik gizle',
+    autoHideHint: 'Gösterilen hassas değer bu süre sonunda yeniden maskelenir (0 = kapalı).',
+    warnOnCopy: 'Hassas değer kopyalanmadan önce uyar',
+    clipboardClear: 'Panoyu temizle',
+    clipboardClearHint: 'Kopyalanan hassas değer bu süre sonunda panodan silinir; o arada başka bir şey kopyalarsanız dokunulmaz (0 = kapalı).',
+    seconds: 'saniye',
+    overrides: 'Hassasiyet geçersiz kılmaları',
+    overridesHint: 'Otomatik sınıflandırmanın değiştirildiği değişken adları.',
+    noOverrides: 'Geçersiz kılma yok.',
+    clearOverride: 'Otomatiğe döndür',
     reset: 'Ayarları sıfırla',
     resetBody: 'Tüm ayarlar varsayılan değerlere döner. Profilleriniz, projeleriniz ve anlık görüntüleriniz etkilenmez.',
     resetDone: 'Ayarlar varsayılana döndürüldü.',
@@ -114,6 +129,14 @@ export default {
     unsupported: 'Bu işlem desteklenmiyor.',
     internal: 'Beklenmeyen bir hata oluştu.',
     invalid_json: 'Geçersiz JSON',
+    invalid_name_empty: 'Değişken adı boş olamaz.',
+    invalid_name_length: 'Değişken adı çok uzun',
+    invalid_name_equals: 'Değişken adı "=" karakteri içeremez',
+    invalid_name_control: 'Değişken adı denetim karakteri içeremez.',
+    invalid_value_nul: 'Değer NUL karakteri içeremez.',
+    invalid_value_length: 'Değer çok uzun',
+    invalid_setting: 'Geçersiz ayar',
+    invalid_path: 'Geçersiz yol',
     not_in_tauri: 'Bu işlem yalnızca masaüstü uygulamasında kullanılabilir.',
   },
 };

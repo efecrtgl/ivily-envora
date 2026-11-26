@@ -115,6 +115,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 .break {
   word-break: break-all;
@@ -438,15 +439,27 @@
 .table tbody tr.clickable {
   cursor: pointer;
 }
+.table.fixed {
+  table-layout: fixed;
+}
 .table td.name {
   font-family: var(--font-mono);
   font-weight: 550;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .table td.value {
   font-family: var(--font-mono);
   color: var(--text-2);
-  max-width: 520px;
+  overflow: hidden;
+}
+.table td.value .truncate,
+.table td .truncate {
+  display: block;
+}
+.table td.value .secret {
+  display: flex;
 }
 .table td.actions {
   text-align: right;
@@ -488,7 +501,8 @@
   gap: var(--sp-1);
   border-bottom: 1px solid var(--border);
   margin-bottom: var(--sp-4);
-  overflow-x: auto;
+  overflow: hidden;
+  flex-wrap: wrap;
 }
 .tab {
   border: 0;

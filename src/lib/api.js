@@ -22,4 +22,13 @@ export const api = {
   settingsReset: () => call('settings_reset'),
   dbStatus: () => call('db_status'),
   dbBackup: (dest) => call('db_backup', { dest }),
+
+  // Ortam inceleme
+  envList: (scopes) => call('env_list', { scopes: scopes || null }),
+  envOverview: () => call('env_overview'),
+  envDetail: (name) => call('env_detail', { name }),
+  envReveal: (scope, name) => call('env_reveal', { scope, name }),
+  envCopy: (scope, name) => call('env_copy', { scope, name }),
+  sensitivitySet: (name, sensitive) => call('sensitivity_set', { name, sensitive }),
+  sensitivityList: () => call('sensitivity_list'),
 };
