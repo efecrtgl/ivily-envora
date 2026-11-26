@@ -44,6 +44,8 @@ pub struct Entry {
 #[serde(rename_all = "camelCase", default)]
 pub struct Query {
     pub search: Option<String>,
+    /// Hedef adına tam eşleşme (ör. bir projenin geçmişi).
+    pub target: Option<String>,
     pub category: Option<String>,
     pub status: Option<String>,
     pub limit: Option<u32>,
@@ -121,6 +123,10 @@ pub fn list(db: &Db, q: &Query) -> AppResult<Vec<Entry>> {
     if let Some(cat) = q.category.as_ref().filter(|s| !s.is_empty()) {
         sql.push_str(" AND category = ?");
         args.push(Box::new(cat.clone()));
+    }
+    if let Some(tg) = q.target.as_ref().filter(|s| !s.is_empty()) {
+        sql.push_str(" AND target = ?");
+        args.push(Box::new(tg.clone()));
     }
     if let Some(st) = q.status.as_ref().filter(|s| !s.is_empty()) {
         sql.push_str(" AND status = ?");

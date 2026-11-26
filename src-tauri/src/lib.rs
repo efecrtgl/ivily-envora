@@ -34,6 +34,7 @@ pub fn run() {
         .manage(state::AppState::init())
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
+            commands::activity::activity_list,
             commands::settings::settings_get,
             commands::settings::settings_update,
             commands::settings::settings_reset,
