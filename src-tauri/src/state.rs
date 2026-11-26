@@ -23,6 +23,8 @@ pub struct AppState {
     pub imports: crate::io::import::ImportCache,
     /// Son analiz sonucu (yalnızca bellekte).
     pub last_analysis: parking_lot::Mutex<Option<crate::analysis::Report>>,
+    /// Son araç keşfi sonucu (yalnızca bellekte).
+    pub last_discovery: parking_lot::Mutex<Option<crate::discovery::Report>>,
 }
 
 /// `%LOCALAPPDATA%\IvilyEnvora`
@@ -62,6 +64,7 @@ impl AppState {
             restore_note,
             imports: Default::default(),
             last_analysis: Default::default(),
+            last_discovery: Default::default(),
         }
     }
 
@@ -77,6 +80,7 @@ impl AppState {
             restore_note: None,
             imports: Default::default(),
             last_analysis: Default::default(),
+            last_discovery: Default::default(),
         }
     }
 }

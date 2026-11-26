@@ -7,6 +7,7 @@ pub mod activity;
 pub mod analysis;
 pub mod app;
 pub mod compare;
+pub mod discovery;
 pub mod env;
 pub mod io;
 pub mod path;

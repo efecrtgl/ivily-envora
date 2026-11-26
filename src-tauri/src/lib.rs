@@ -7,6 +7,7 @@ pub mod analysis;
 pub mod commands;
 pub mod compare;
 pub mod db;
+pub mod discovery;
 pub mod env;
 pub mod envset;
 pub mod error;
@@ -41,6 +42,8 @@ pub fn run() {
             commands::analysis::analysis_rules,
             commands::analysis::analysis_run,
             commands::analysis::analysis_last,
+            commands::discovery::discovery_run,
+            commands::discovery::discovery_last,
             commands::settings::settings_get,
             commands::settings::settings_update,
             commands::settings::settings_reset,
