@@ -147,6 +147,47 @@ pub const MIGRATIONS: &[Migration] = &[
         CREATE INDEX idx_profile_activations ON profile_activations(profile_id, deactivated_at);
     "#,
     },
+    Migration {
+        version: 5,
+        name: "projects",
+        sql: r#"
+        CREATE TABLE projects (
+            id          INTEGER PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE COLLATE NOCASE,
+            identifier  TEXT NOT NULL UNIQUE COLLATE NOCASE,
+            description TEXT NOT NULL DEFAULT '',
+            directory   TEXT NOT NULL,
+            profile_id  INTEGER REFERENCES profiles(id) ON DELETE SET NULL,
+            tags        TEXT NOT NULL DEFAULT '[]',
+            launch      TEXT NOT NULL DEFAULT '{}',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        );
+
+        -- profile_vars / profile_paths ile aynı yapı (bkz. envset.rs).
+        CREATE TABLE project_vars (
+            project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            position    INTEGER NOT NULL,
+            name        TEXT NOT NULL,
+            value_plain TEXT,
+            value_enc   BLOB,
+            sensitive   INTEGER NOT NULL DEFAULT 0,
+            kind        TEXT,
+            scope       TEXT NOT NULL DEFAULT 'process',
+            action      TEXT NOT NULL DEFAULT 'set' CHECK (action IN ('set', 'unset')),
+            PRIMARY KEY (project_id, name COLLATE NOCASE)
+        );
+
+        CREATE TABLE project_paths (
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            position   INTEGER NOT NULL,
+            entry      TEXT NOT NULL,
+            action     TEXT NOT NULL CHECK (action IN ('prepend', 'append', 'remove')),
+            scope      TEXT NOT NULL DEFAULT 'process',
+            PRIMARY KEY (project_id, position)
+        );
+    "#,
+    },
 ];
 
 pub fn latest_version() -> i64 {

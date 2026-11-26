@@ -2,6 +2,7 @@
 
 pub mod apply;
 pub mod category;
+pub mod effective;
 pub mod elevate;
 pub mod inspect;
 pub mod model;

@@ -11,6 +11,7 @@ pub mod error;
 pub mod pathmgr;
 pub mod platform;
 pub mod profiles;
+pub mod projects;
 pub mod security;
 pub mod settings;
 pub mod snapshots;
@@ -62,6 +63,15 @@ pub fn run() {
             commands::profiles::profile_deactivation_plan,
             commands::profiles::profile_forget_activation,
             commands::profiles::profile_activations,
+            commands::projects::projects_list,
+            commands::projects::project_get,
+            commands::projects::project_inspect_dir,
+            commands::projects::project_create,
+            commands::projects::project_update,
+            commands::projects::project_delete,
+            commands::projects::project_reveal_var,
+            commands::projects::project_launch_preview,
+            commands::projects::project_launch,
             commands::env::sensitivity_set,
             commands::env::sensitivity_list,
         ])
