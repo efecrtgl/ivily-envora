@@ -107,12 +107,30 @@ pub fn env_copy(state: State<'_, AppState>, scope: Scope, name: String) -> AppRe
 
 use crate::env::apply::{self, ApplyOptions, ApplyOutcome};
 use crate::env::plan::{self, Action, ChangePlan, Preview};
+use crate::sources::DbSources;
 use tauri::Manager;
 
 #[tauri::command]
 pub fn env_plan_preview(state: State<'_, AppState>, plan: ChangePlan) -> AppResult<Preview> {
     let o = overrides::all(&state.db)?;
-    plan::preview(state.provider.as_ref(), &plan, &o)
+    plan::preview(
+        state.provider.as_ref(),
+        &plan,
+        &o,
+        &DbSources::new(&state.db),
+    )
+}
+
+/// Planın hangi iş akışının parçası olduğu; başarılı uygulamadan sonra sunucu tarafında kaydedilir.
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum PlanContext {
+    #[serde(rename_all = "camelCase")]
+    ProfileActivate { profile_id: i64 },
+    #[serde(rename_all = "camelCase")]
+    ProfileDeactivate { profile_id: i64 },
+    #[serde(rename_all = "camelCase")]
+    SnapshotRestore { snapshot_id: i64 },
 }
 
 fn plan_label(plan: &ChangePlan) -> String {
@@ -128,11 +146,16 @@ fn plan_label(plan: &ChangePlan) -> String {
 /// Onaylanmış planı uygular: otomatik yedek → uygulama → `WM_SETTINGCHANGE`.
 /// Sistem kapsamında ve yönetici değilsek yalnızca bu işlem için UAC istemi açılır.
 #[tauri::command]
-pub async fn env_plan_apply(app: tauri::AppHandle, plan: ChangePlan) -> AppResult<ApplyOutcome> {
+pub async fn env_plan_apply(
+    app: tauri::AppHandle,
+    plan: ChangePlan,
+    context: Option<PlanContext>,
+) -> AppResult<ApplyOutcome> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
         let o = overrides::all(&state.db)?;
-        let preview = plan::preview(state.provider.as_ref(), &plan, &o)?;
+        let src = DbSources::new(&state.db);
+        let preview = plan::preview(state.provider.as_ref(), &plan, &o, &src)?;
         let count = |a: Action| preview.items.iter().filter(|i| i.action == a).count();
         let settings = state.settings.read().clone();
         let label = plan_label(&plan);
@@ -155,8 +178,21 @@ pub async fn env_plan_apply(app: tauri::AppHandle, plan: ChangePlan) -> AppResul
             &plan,
             &o,
             &opts,
+            &src,
             &elevate,
         );
+        if let Ok(out) = &res {
+            let recorded = match context {
+                Some(PlanContext::ProfileActivate { profile_id }) => {
+                    crate::profiles::activate::record_activation(&state.db, profile_id, plan.scope, out.snapshot_id)
+                }
+                Some(PlanContext::ProfileDeactivate { profile_id }) => {
+                    crate::profiles::activate::mark_deactivated(&state.db, profile_id, plan.scope)
+                }
+                Some(PlanContext::SnapshotRestore { .. }) | None => Ok(()),
+            };
+            let _ = recorded;
+        }
         let details = json!({
             "scope": plan.scope,
             "created": count(Action::Create),
@@ -165,6 +201,11 @@ pub async fn env_plan_apply(app: tauri::AppHandle, plan: ChangePlan) -> AppResul
             "elevated": res.as_ref().map(|r| r.elevated).unwrap_or(false),
             "snapshotId": res.as_ref().ok().and_then(|r| r.snapshot_id),
             "error": res.as_ref().err().map(|e| e.code()),
+            "context": context.map(|c| match c {
+                PlanContext::ProfileActivate { profile_id } => json!({ "profileActivate": profile_id }),
+                PlanContext::ProfileDeactivate { profile_id } => json!({ "profileDeactivate": profile_id }),
+                PlanContext::SnapshotRestore { snapshot_id } => json!({ "snapshotRestore": snapshot_id }),
+            }),
         });
         let status = match &res {
             Ok(_) => Status::Ok,

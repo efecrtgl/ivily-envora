@@ -46,37 +46,10 @@ pub struct NewSnapshot<'a> {
     pub source: &'a str,
 }
 
-fn scope_str(s: Scope) -> &'static str {
-    s.as_str()
-}
-
 fn parse_scope(s: &str) -> rusqlite::Result<Scope> {
-    match s {
-        "process" => Ok(Scope::Process),
-        "user" => Ok(Scope::User),
-        "machine" => Ok(Scope::Machine),
-        _ => Err(rusqlite::Error::InvalidColumnType(
-            0,
-            "scope".into(),
-            rusqlite::types::Type::Text,
-        )),
-    }
-}
-
-fn kind_str(k: ValueKind) -> &'static str {
-    match k {
-        ValueKind::String => "string",
-        ValueKind::Expand => "expand",
-        ValueKind::Other => "other",
-    }
-}
-
-fn parse_kind(s: &str) -> ValueKind {
-    match s {
-        "expand" => ValueKind::Expand,
-        "other" => ValueKind::Other,
-        _ => ValueKind::String,
-    }
+    Scope::parse(s).ok_or_else(|| {
+        rusqlite::Error::InvalidColumnType(0, "scope".into(), rusqlite::types::Type::Text)
+    })
 }
 
 pub fn create(db: &Db, meta: NewSnapshot, items: &[SnapshotItem]) -> AppResult<i64> {
@@ -116,9 +89,9 @@ pub fn create(db: &Db, meta: NewSnapshot, items: &[SnapshotItem]) -> AppResult<i
         for (it, plain, enc) in &rows {
             stmt.execute(params![
                 id,
-                scope_str(it.scope),
+                it.scope.as_str(),
                 it.name,
-                kind_str(it.kind),
+                it.kind.as_str(),
                 it.present as i64,
                 it.sensitive as i64,
                 plain,
@@ -209,7 +182,7 @@ pub fn items(db: &Db, id: i64) -> AppResult<Vec<SnapshotItem>> {
                 scope: parse_scope(&r.scope)
                     .map_err(|_| AppError::Database("geçersiz kapsam".into()))?,
                 name: r.name,
-                kind: parse_kind(&r.kind),
+                kind: ValueKind::parse(&r.kind).unwrap_or(ValueKind::String),
                 present: r.present,
                 sensitive: r.sensitive,
                 value,

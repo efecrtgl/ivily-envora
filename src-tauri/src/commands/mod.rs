@@ -5,4 +5,5 @@
 
 pub mod app;
 pub mod env;
+pub mod profiles;
 pub mod settings;

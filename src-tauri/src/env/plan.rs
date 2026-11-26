@@ -33,12 +33,52 @@ pub enum Op {
         source_scope: Scope,
         source_name: String,
     },
+    /// Değeri kayıtlı bir profil değişkeninden alır (değer ön uca gönderilmez).
+    #[serde(rename_all = "camelCase")]
+    FromProfile { name: String, profile_id: i64 },
+    /// Değeri bir anlık görüntü öğesinden alır; öğe "yoktu" olarak kayıtlıysa değişken silinir.
+    #[serde(rename_all = "camelCase")]
+    FromSnapshot { name: String, snapshot_id: i64 },
+}
+
+/// Ön uca gönderilmeyen kayıtlı değerlerin kaynağı.
+pub trait ValueSource {
+    /// Profil değişkeninin değeri ve türü.
+    fn profile_var(&self, profile_id: i64, name: &str) -> AppResult<(String, Option<ValueKind>)>;
+    /// Anlık görüntü öğesi: `Some((değer, tür))` ya da değişken o anda yoksa `None`.
+    fn snapshot_item(
+        &self,
+        snapshot_id: i64,
+        scope: Scope,
+        name: &str,
+    ) -> AppResult<Option<(String, ValueKind)>>;
+}
+
+/// Kayıtlı kaynak gerektirmeyen planlar için.
+pub struct NoSources;
+
+impl ValueSource for NoSources {
+    fn profile_var(&self, _: i64, name: &str) -> AppResult<(String, Option<ValueKind>)> {
+        Err(AppError::NotFound(name.to_string()))
+    }
+    fn snapshot_item(
+        &self,
+        _: i64,
+        _: Scope,
+        name: &str,
+    ) -> AppResult<Option<(String, ValueKind)>> {
+        Err(AppError::NotFound(name.to_string()))
+    }
 }
 
 impl Op {
     pub fn target(&self) -> &str {
         match self {
-            Op::Set { name, .. } | Op::Delete { name } | Op::Copy { name, .. } => name,
+            Op::Set { name, .. }
+            | Op::Delete { name }
+            | Op::Copy { name, .. }
+            | Op::FromProfile { name, .. }
+            | Op::FromSnapshot { name, .. } => name,
         }
     }
 }
@@ -148,7 +188,11 @@ pub fn validate(plan: &ChangePlan) -> AppResult<()> {
 }
 
 /// İşlemleri mevcut ortama göre çözümler.
-pub fn resolve(p: &dyn EnvProvider, plan: &ChangePlan) -> AppResult<Vec<Resolved>> {
+pub fn resolve(
+    p: &dyn EnvProvider,
+    plan: &ChangePlan,
+    src: &dyn ValueSource,
+) -> AppResult<Vec<Resolved>> {
     validate(plan)?;
     let current: HashMap<String, (String, ValueKind)> = p
         .list(plan.scope)?
@@ -159,6 +203,30 @@ pub fn resolve(p: &dyn EnvProvider, plan: &ChangePlan) -> AppResult<Vec<Resolved
     for op in &plan.ops {
         out.push(match op {
             Op::Delete { name } => Resolved::Delete { name: name.clone() },
+            Op::FromProfile { name, profile_id } => {
+                let (value, kind) = src.profile_var(*profile_id, name)?;
+                validate_value(&value)?;
+                let existing = current.get(&name_key(name)).map(|(_, k)| *k);
+                let kind = kind
+                    .or(existing.filter(|k| *k != ValueKind::Other))
+                    .unwrap_or_else(|| infer_kind(&value));
+                Resolved::Set {
+                    name: name.clone(),
+                    value,
+                    kind,
+                }
+            }
+            Op::FromSnapshot { name, snapshot_id } => {
+                match src.snapshot_item(*snapshot_id, plan.scope, name)? {
+                    Some((value, kind)) if kind != ValueKind::Other => Resolved::Set {
+                        name: name.clone(),
+                        value,
+                        kind,
+                    },
+                    Some(_) => return Err(AppError::validation("invalid_kind", name.clone())),
+                    None => Resolved::Delete { name: name.clone() },
+                }
+            }
             Op::Set { name, value, kind } => {
                 let existing = current.get(&name_key(name));
                 let value = match (value, existing) {
@@ -245,8 +313,9 @@ pub fn preview(
     p: &dyn EnvProvider,
     plan: &ChangePlan,
     overrides: &Overrides,
+    src: &dyn ValueSource,
 ) -> AppResult<Preview> {
-    let resolved = resolve(p, plan)?;
+    let resolved = resolve(p, plan, src)?;
     let current: HashMap<String, (String, ValueKind)> = p
         .list(plan.scope)?
         .into_iter()
@@ -399,7 +468,7 @@ mod tests {
                 set("JAVA_HOME", "C:\\jdk21"),
             ],
         };
-        let pv = preview(&p, &plan, &Overrides::new()).unwrap();
+        let pv = preview(&p, &plan, &Overrides::new(), &NoSources).unwrap();
         let get = |n: &str| pv.items.iter().find(|i| i.name == n).unwrap();
         assert_eq!(get("EDITOR").action, Action::Unchanged);
         assert_eq!(get("NEW_DIR").action, Action::Create);
@@ -422,7 +491,7 @@ mod tests {
             scope: Scope::User,
             ops: vec![set("API_TOKEN", "tok-new-999")],
         };
-        let pv = preview(&p, &plan, &Overrides::new()).unwrap();
+        let pv = preview(&p, &plan, &Overrides::new(), &NoSources).unwrap();
         assert!(
             pv.items[0].sensitive && pv.items[0].before.is_none() && pv.items[0].after.is_none()
         );
@@ -439,7 +508,7 @@ mod tests {
                 name: "PATH".into(),
             }],
         };
-        let pv = preview(&p, &plan, &Overrides::new()).unwrap();
+        let pv = preview(&p, &plan, &Overrides::new(), &NoSources).unwrap();
         assert!(pv.requires_elevation);
         assert!(pv.items[0].warnings.contains(&"critical"));
         assert!(pv.items[0].warnings.contains(&"pathDelete"));
@@ -464,7 +533,7 @@ mod tests {
                 },
             ],
         };
-        let r = resolve(&p, &plan).unwrap();
+        let r = resolve(&p, &plan, &NoSources).unwrap();
         assert_eq!(
             r[0],
             Resolved::Set {
@@ -489,7 +558,7 @@ mod tests {
                 kind: None,
             }],
         };
-        assert!(resolve(&p, &missing).is_err());
+        assert!(resolve(&p, &missing, &NoSources).is_err());
     }
 
     #[test]

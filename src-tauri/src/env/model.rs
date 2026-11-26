@@ -63,3 +63,33 @@ impl EnvVar {
 pub fn name_key(name: &str) -> String {
     name.to_uppercase()
 }
+
+impl Scope {
+    pub fn parse(s: &str) -> Option<Scope> {
+        match s {
+            "process" => Some(Scope::Process),
+            "user" => Some(Scope::User),
+            "machine" => Some(Scope::Machine),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ValueKind::String => "string",
+            ValueKind::Expand => "expand",
+            ValueKind::Other => "other",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<ValueKind> {
+        match s {
+            "string" => Some(ValueKind::String),
+            "expand" => Some(ValueKind::Expand),
+            "other" => Some(ValueKind::Other),
+            _ => None,
+        }
+    }
+}

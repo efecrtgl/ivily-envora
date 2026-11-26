@@ -2,7 +2,7 @@
 
 use super::inspect::{view_of, Overrides};
 use super::model::{name_key, EnvVar, Scope, ValueKind};
-use super::plan::{resolve, ChangePlan, Resolved};
+use super::plan::{resolve, ChangePlan, Resolved, ValueSource};
 use super::provider::EnvProvider;
 use crate::db::Db;
 use crate::error::{AppError, AppResult};
@@ -139,9 +139,10 @@ pub fn apply(
     plan: &ChangePlan,
     overrides: &Overrides,
     opts: &ApplyOptions,
+    src: &dyn ValueSource,
     elevate: Elevator,
 ) -> AppResult<ApplyOutcome> {
-    let ops = effective_ops(p, plan.scope, resolve(p, plan)?)?;
+    let ops = effective_ops(p, plan.scope, resolve(p, plan, src)?)?;
     if ops.is_empty() {
         return Ok(ApplyOutcome {
             applied: 0,
@@ -202,7 +203,7 @@ pub fn restore_ops(items: &[SnapshotItem], scope: Scope) -> Vec<Resolved> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::env::plan::Op;
+    use crate::env::plan::{NoSources, Op};
     use crate::env::provider::MemoryProvider;
     use crate::error::AppResult;
 
@@ -244,7 +245,16 @@ mod tests {
                 },
             ],
         };
-        let out = apply(&db, &p, &plan, &Overrides::new(), &opts(), &no_elevate).unwrap();
+        let out = apply(
+            &db,
+            &p,
+            &plan,
+            &Overrides::new(),
+            &opts(),
+            &NoSources,
+            &no_elevate,
+        )
+        .unwrap();
         assert_eq!(out.applied, 3);
         assert_eq!(p.get(Scope::User, "EDITOR").unwrap().unwrap().value, "code");
 
@@ -284,7 +294,16 @@ mod tests {
                 kind: None,
             }],
         };
-        let out = apply(&db, &p, &plan, &Overrides::new(), &opts(), &no_elevate).unwrap();
+        let out = apply(
+            &db,
+            &p,
+            &plan,
+            &Overrides::new(),
+            &opts(),
+            &NoSources,
+            &no_elevate,
+        )
+        .unwrap();
         assert_eq!(out.applied, 0);
         assert!(out.snapshot_id.is_none());
         assert!(store::list(&db).unwrap().is_empty());
@@ -361,13 +380,30 @@ mod tests {
             called.set(ops.len());
             Ok(ops.len())
         };
-        let out = apply(&db, &p, &plan, &Overrides::new(), &opts(), &elevate).unwrap();
+        let out = apply(
+            &db,
+            &p,
+            &plan,
+            &Overrides::new(),
+            &opts(),
+            &NoSources,
+            &elevate,
+        )
+        .unwrap();
         assert!(out.elevated);
         assert_eq!(called.get(), 1);
         // Yükseltme reddedilirse (UAC iptal) hata aynen döner.
         let cancel = |_: &[Resolved]| -> AppResult<usize> { Err(AppError::Cancelled) };
         assert!(matches!(
-            apply(&db, &p, &plan, &Overrides::new(), &opts(), &cancel),
+            apply(
+                &db,
+                &p,
+                &plan,
+                &Overrides::new(),
+                &opts(),
+                &NoSources,
+                &cancel
+            ),
             Err(AppError::Cancelled)
         ));
     }

@@ -81,6 +81,72 @@ pub const MIGRATIONS: &[Migration] = &[
         );
     "#,
     },
+    Migration {
+        version: 4,
+        name: "profiles",
+        sql: r#"
+        CREATE TABLE profiles (
+            id          INTEGER PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE COLLATE NOCASE,
+            description TEXT NOT NULL DEFAULT '',
+            category    TEXT NOT NULL DEFAULT '',
+            tags        TEXT NOT NULL DEFAULT '[]',
+            status      TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'archived')),
+            version     INTEGER NOT NULL DEFAULT 1,
+            metadata    TEXT NOT NULL DEFAULT '{}',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        );
+
+        -- Hassas değerler value_enc (DPAPI) sütununda; value_plain yalnızca hassas olmayanlar için.
+        CREATE TABLE profile_vars (
+            profile_id  INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+            position    INTEGER NOT NULL,
+            name        TEXT NOT NULL,
+            value_plain TEXT,
+            value_enc   BLOB,
+            sensitive   INTEGER NOT NULL DEFAULT 0,
+            kind        TEXT,
+            scope       TEXT NOT NULL DEFAULT 'user',
+            action      TEXT NOT NULL DEFAULT 'set' CHECK (action IN ('set', 'unset')),
+            PRIMARY KEY (profile_id, name COLLATE NOCASE)
+        );
+
+        CREATE TABLE profile_paths (
+            profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+            position   INTEGER NOT NULL,
+            entry      TEXT NOT NULL,
+            action     TEXT NOT NULL CHECK (action IN ('prepend', 'append', 'remove')),
+            scope      TEXT NOT NULL DEFAULT 'user',
+            PRIMARY KEY (profile_id, position)
+        );
+
+        -- Her düzenlemeden önceki tam profil (JSON). Hassas değer içeriyorsa data_enc (DPAPI).
+        CREATE TABLE profile_revisions (
+            id         INTEGER PRIMARY KEY,
+            profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+            version    INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            note       TEXT,
+            var_count  INTEGER NOT NULL DEFAULT 0,
+            data_plain TEXT,
+            data_enc   BLOB
+        );
+        CREATE INDEX idx_profile_revisions ON profile_revisions(profile_id, version DESC);
+
+        -- Kalıcı uygulamalar. snapshot_id, uygulama öncesi yedektir (devre dışı bırakmada kullanılır).
+        CREATE TABLE profile_activations (
+            id             INTEGER PRIMARY KEY,
+            profile_id     INTEGER REFERENCES profiles(id) ON DELETE SET NULL,
+            profile_name   TEXT NOT NULL,
+            scope          TEXT NOT NULL,
+            snapshot_id    INTEGER REFERENCES snapshots(id) ON DELETE SET NULL,
+            applied_at     TEXT NOT NULL,
+            deactivated_at TEXT
+        );
+        CREATE INDEX idx_profile_activations ON profile_activations(profile_id, deactivated_at);
+    "#,
+    },
 ];
 
 pub fn latest_version() -> i64 {
