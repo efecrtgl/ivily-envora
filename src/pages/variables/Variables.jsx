@@ -22,6 +22,8 @@ import ScopeHelp from '../../components/env/ScopeHelp.jsx';
 import SecretValue from '../../components/env/SecretValue.jsx';
 import { useCopyValue, copyPlainText } from '../../components/env/useCopyValue.jsx';
 import VariableDetail from './VariableDetail.jsx';
+import VariableEditor from '../../components/env/VariableEditor.jsx';
+import ChangeFlow from '../../components/env/ChangeFlow.jsx';
 
 const CATEGORIES = ['all', 'path', 'development', 'credentials', 'user', 'system', 'other'];
 const MAX_ROWS = 500;
@@ -33,6 +35,41 @@ export default function Variables() {
   const [filter, setFilter] = useState({ search: '', scope: 'all', category: 'all', onlySensitive: false, onlyIssues: false, sort: 'name' });
   const [selected, setSelected] = useState(null);
   const { copy, dialog } = useCopyValue();
+  const [editor, setEditor] = useState(null); // { mode, initial }
+  const [flow, setFlow] = useState(null); // { plan, title }
+  const overview = useAsync(() => api.envOverview(), []);
+  const canWriteMachine = !!overview.data?.canWriteMachine;
+
+  const startPlan = (plan, title) => {
+    setEditor(null);
+    setFlow({ plan, title });
+  };
+
+  const entryActions = (v) => {
+    if (v.scope === 'process') {
+      return (
+        <Button size="sm" variant="ghost" icon="copy" onClick={() => setEditor({ mode: 'duplicate', initial: v })}>
+          {t('editor.persist')}
+        </Button>
+      );
+    }
+    if (v.readOnly) return null;
+    return (
+      <>
+        <Button size="sm" variant="ghost" iconOnly icon="edit" title={t('common.edit')} onClick={() => setEditor({ mode: 'edit', initial: v })} />
+        <Button size="sm" variant="ghost" iconOnly icon="copy" title={t('common.duplicate')} onClick={() => setEditor({ mode: 'duplicate', initial: v })} />
+        <Button size="sm" variant="ghost" iconOnly icon="tag" title={t('common.rename')} onClick={() => setEditor({ mode: 'rename', initial: v })} />
+        <Button
+          size="sm"
+          variant="ghost"
+          iconOnly
+          icon="trash"
+          title={t('common.delete')}
+          onClick={() => startPlan({ scope: v.scope, ops: [{ op: 'delete', name: v.name }] }, t('editor.deleteTitle', { name: v.name }))}
+        />
+      </>
+    );
+  };
 
   const vars = data || [];
   const rows = useMemo(() => filterVars(vars, filter), [vars, filter]);
@@ -54,9 +91,14 @@ export default function Variables() {
         title={t('vars.title')}
         subtitle={t('vars.subtitle')}
         actions={
-          <Button icon="refresh" onClick={reload} disabled={loading}>
-            {t('common.refresh')}
-          </Button>
+          <>
+            <Button icon="refresh" onClick={reload} disabled={loading}>
+              {t('common.refresh')}
+            </Button>
+            <Button variant="primary" icon="plus" onClick={() => setEditor({ mode: 'create', initial: {} })}>
+              {t('editor.new')}
+            </Button>
+          </>
         }
       />
       <div className="stack">
@@ -170,7 +212,30 @@ export default function Variables() {
           )}
         </Card>
       </div>
-      {selected && <VariableDetail name={selected} onClose={() => setSelected(null)} onChanged={reload} />}
+      {selected && !editor && !flow && (
+        <VariableDetail name={selected} onClose={() => setSelected(null)} onChanged={reload} actions={entryActions} />
+      )}
+      {editor && (
+        <VariableEditor
+          mode={editor.mode}
+          initial={editor.initial}
+          canWriteMachine={canWriteMachine}
+          onClose={() => setEditor(null)}
+          onPlan={(plan) => startPlan(plan)}
+        />
+      )}
+      {flow && (
+        <ChangeFlow
+          plan={flow.plan}
+          title={flow.title}
+          onClose={() => setFlow(null)}
+          onDone={() => {
+            setSelected(null);
+            reload();
+            overview.reload();
+          }}
+        />
+      )}
       {dialog}
     </div>
   );

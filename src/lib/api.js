@@ -29,6 +29,8 @@ export const api = {
   envDetail: (name) => call('env_detail', { name }),
   envReveal: (scope, name) => call('env_reveal', { scope, name }),
   envCopy: (scope, name) => call('env_copy', { scope, name }),
+  envPlanPreview: (plan) => call('env_plan_preview', { plan }),
+  envPlanApply: (plan) => call('env_plan_apply', { plan }),
   sensitivitySet: (name, sensitive) => call('sensitivity_set', { name, sensitive }),
   sensitivityList: () => call('sensitivity_list'),
 };
