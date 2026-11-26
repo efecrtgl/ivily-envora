@@ -16,3 +16,4 @@ pub mod projects;
 pub mod settings;
 pub mod snapshots;
 pub mod templates;
+pub mod update;

@@ -251,3 +251,11 @@ code,
 :root[data-reduce-motion='true'] .toast {
   animation: none;
 }
+
+.banner.info {
+  background: var(--info-bg);
+  color: var(--text);
+}
+.banner.info .icon {
+  color: var(--info);
+}

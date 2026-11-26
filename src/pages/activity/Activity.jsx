@@ -8,7 +8,7 @@ import Icon from '../../components/ui/Icon.jsx';
 import { Badge, Button, Callout, Card, Empty, Loading, PageHeader, SearchInput, Segmented } from '../../components/ui/primitives.jsx';
 
 const PAGE = 100;
-export const CATEGORIES = ['variable', 'path', 'profile', 'project', 'snapshot', 'import', 'export', 'compare', 'analysis', 'discovery', 'template', 'security', 'backup', 'settings', 'ecosystem'];
+export const CATEGORIES = ['variable', 'path', 'profile', 'project', 'snapshot', 'import', 'export', 'compare', 'analysis', 'discovery', 'template', 'security', 'backup', 'settings', 'ecosystem', 'update'];
 const STATUS_TONE = { ok: 'ok', failed: 'danger', warning: 'warn' };
 
 /** Çeviri yoksa ham değeri döndüren yardımcı. */

@@ -77,6 +77,8 @@ export const api = {
   appRestart: () => call('app_restart'),
   diagnosticsReport: () => call('diagnostics_report'),
   iepPreview: (method) => call('iep_preview', { method }),
+  updateCheck: () => call('update_check'),
+  updateInstall: (onProgress) => call('update_install', { onProgress }),
 
   // İçe / dışa aktarma
   importPreview: (path, format) => call('import_preview', { path, format: format || null }),

@@ -24,6 +24,7 @@ pub mod snapshots;
 pub mod sources;
 pub mod state;
 pub mod templates;
+pub mod update;
 
 pub const APP_NAME: &str = "Ivily Envora";
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -38,6 +39,8 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(commands::update::PendingUpdate::default())
         .manage(state::AppState::init())
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
@@ -73,6 +76,8 @@ pub fn run() {
             commands::app::app_restart,
             commands::app::diagnostics_report,
             commands::app::iep_preview,
+            commands::update::update_check,
+            commands::update::update_install,
             commands::env::env_list,
             commands::env::env_overview,
             commands::env::env_detail,

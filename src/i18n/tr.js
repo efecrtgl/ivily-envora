@@ -229,6 +229,8 @@ export default {
     invalid_kind: 'Bu değer türü yazılamaz',
     invalid_plan: 'Geçersiz değişiklik planı',
     invalid_extension: 'Bu dosya türüne yazılamaz; izin verilen uzantılar',
+    invalid_update_source: 'Güncelleme kaynağı resmi depo değil.',
+    no_pending_update: 'Kurulacak güncelleme yok; önce denetleyin.',
     file_too_large: 'Dosya çok büyük',
     invalid_encoding: 'Dosya kodlaması desteklenmiyor (UTF-8 veya UTF-16 olmalı).',
     invalid_csv: 'Geçersiz CSV (gerekli sütunlar: name, value)',

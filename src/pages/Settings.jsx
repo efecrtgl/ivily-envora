@@ -5,6 +5,7 @@ import { useSettings } from '../app/settings.jsx';
 import { PAGES } from '../app/nav.js';
 import { api, inTauri } from '../lib/api.js';
 import { formatBytes } from '../lib/format.js';
+import UpdatePanel from '../components/UpdatePanel.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import { ConfirmDialog, Modal } from '../components/ui/Modal.jsx';
 import { Badge, Button, Callout, Card, Checkbox, PageHeader, Segmented, Toggle } from '../components/ui/primitives.jsx';
@@ -425,6 +426,26 @@ export default function Settings() {
           <SettingRow label={t('settings.excludeInSnapshots')} hint={t('settings.excludeInSnapshotsHint')}>
             <Toggle label={t('settings.excludeInSnapshots')} checked={s.security.excludeSensitiveInSnapshots} onChange={change('security.excludeSensitiveInSnapshots')} />
           </SettingRow>
+        </Card>
+
+        <Card title={t('updates.title')} icon="download">
+          <SettingRow label={t('updates.channel')} hint={t('updates.channelHint')}>
+            <Segmented
+              label={t('updates.channel')}
+              value={s.updates.channel}
+              onChange={change('updates.channel')}
+              options={[
+                { value: 'stable', label: t('updates.stable') },
+                { value: 'prerelease', label: t('updates.prerelease') },
+              ]}
+            />
+          </SettingRow>
+          <SettingRow label={t('updates.onStartup')} hint={t('updates.onStartupHint')}>
+            <Toggle label={t('updates.onStartup')} checked={s.updates.checkOnStartup} onChange={change('updates.checkOnStartup')} />
+          </SettingRow>
+          <div style={{ paddingTop: 12 }}>
+            <UpdatePanel />
+          </div>
         </Card>
 
         <Card title={t('settings.ecosystem')} icon="link" desc={t('settings.ecosystemHint')}>

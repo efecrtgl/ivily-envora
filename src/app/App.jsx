@@ -7,6 +7,8 @@ import { ToastProvider, useToast } from '../components/ui/Toast.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import { Loading } from '../components/ui/primitives.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
+import { shouldCheckOnStartup, markChecked, LAST_CHECK_KEY } from '../components/UpdatePanel.jsx';
+import { api, inTauri } from '../lib/api.js';
 import logo from '../../assets/logo.svg';
 
 function Sidebar({ page, onNavigate }) {
@@ -67,6 +69,27 @@ function Shell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta.restoreNote]);
   const [route, setRoute] = useState({ page: DEFAULT_PAGE, params: null });
+  const [update, setUpdate] = useState(null);
+
+  // Güncelleme denetimi: ayar açıksa günde en fazla bir kez; hiçbir şey indirmez veya kurmaz.
+  useEffect(() => {
+    if (!meta.loaded || !inTauri()) return;
+    let last = 0;
+    try {
+      last = localStorage.getItem(LAST_CHECK_KEY);
+    } catch {
+      /* yok */
+    }
+    if (!shouldCheckOnStartup(settings.updates.checkOnStartup, last)) return;
+    api
+      .updateCheck()
+      .then((info) => {
+        markChecked();
+        if (info) setUpdate(info);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meta.loaded]);
   const navigate = useCallback((page, params = null) => setRoute({ page, params }), []);
 
   // Ayarlar yüklendiğinde başlangıç sayfasına bir kez geç.
@@ -85,6 +108,18 @@ function Shell() {
       <div className="shell">
         <Sidebar page={route.page} onNavigate={navigate} />
         <main className="main">
+          {update && (
+            <div className="banner info" role="status">
+              <Icon name="download" /> {t('updates.banner', { version: update.version })}
+              <span className="spacer" />
+              <button className="btn sm" onClick={() => { setUpdate(null); navigate('settings'); }}>
+                {t('updates.details')}
+              </button>
+              <button className="btn sm ghost icon-only" aria-label={t('common.close')} onClick={() => setUpdate(null)}>
+                <Icon name="x" size={12} />
+              </button>
+            </div>
+          )}
           {meta.degraded && (
             <div className="banner" role="alert">
               <Icon name="alert" /> {t('settings.degraded')}

@@ -229,6 +229,8 @@ export default {
     invalid_kind: 'This value type cannot be written',
     invalid_plan: 'Invalid change plan',
     invalid_extension: 'Cannot write this file type; allowed extensions',
+    invalid_update_source: 'The update source is not the official repository.',
+    no_pending_update: 'There is no update to install; check first.',
     file_too_large: 'The file is too large',
     invalid_encoding: 'Unsupported file encoding (must be UTF-8 or UTF-16).',
     invalid_csv: 'Invalid CSV (required columns: name, value)',
