@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import tr from './tr.js';
 import en from './en.js';
-import { translate } from './index.jsx';
+import { translate, loadLanguage } from './index.jsx';
 
 function keys(obj, prefix = '') {
   return Object.entries(obj).flatMap(([k, v]) =>
@@ -26,7 +26,14 @@ describe('i18n', () => {
     }
   });
 
-  it('parametreleri yerleştirir ve bilinmeyenleri olduğu gibi bırakır', () => {
+  it('İngilizce yüklenene kadar Türkçeye düşer, yüklendikten sonra çevirir', async () => {
+    expect(translate('en', 'common.save')).toBe('Kaydet');
+    await loadLanguage('en');
+    expect(translate('en', 'common.save')).toBe('Save');
+  });
+
+  it('parametreleri yerleştirir ve bilinmeyenleri olduğu gibi bırakır', async () => {
+    await loadLanguage('en');
     expect(translate('tr', 'common.save')).toBe('Kaydet');
     expect(translate('en', 'common.save')).toBe('Save');
     expect(translate('xx', 'common.save')).toBe('Kaydet');

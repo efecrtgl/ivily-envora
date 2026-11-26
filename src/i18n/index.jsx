@@ -1,8 +1,15 @@
-import { createContext, useCallback, useContext, useMemo } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import tr from './tr.js';
-import en from './en.js';
 
-export const DICTIONARIES = { tr, en };
+// Türkçe (birincil dil) pakete gömülüdür; diğer diller yalnızca seçildiğinde yüklenir.
+export const DICTIONARIES = { tr };
+const LOADERS = { en: () => import('./en.js') };
+
+/** Dil sözlüğünü (gerekirse) yükler. Bilinmeyen diller için hiçbir şey yapmaz. */
+export async function loadLanguage(lang) {
+  if (DICTIONARIES[lang] || !LOADERS[lang]) return;
+  DICTIONARIES[lang] = (await LOADERS[lang]()).default;
+}
 export const LANGUAGES = [
   { value: 'tr', label: 'Türkçe' },
   { value: 'en', label: 'English' },
@@ -30,6 +37,10 @@ export function translate(lang, key, params) {
 const I18nCtx = createContext({ lang: DEFAULT_LANG, t: (k, p) => translate(DEFAULT_LANG, k, p) });
 
 export function I18nProvider({ lang, children }) {
+  const [, setLoaded] = useState(0);
+  useEffect(() => {
+    if (!DICTIONARIES[lang] && LOADERS[lang]) loadLanguage(lang).then(() => setLoaded((n) => n + 1));
+  }, [lang]);
   const l = DICTIONARIES[lang] ? lang : DEFAULT_LANG;
   const t = useCallback((key, params) => translate(l, key, params), [l]);
   const value = useMemo(() => ({ lang: l, t }), [l, t]);
