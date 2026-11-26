@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Ivily Envora",
+  "version": "../package.json",
+  "identifier": "com.efecrtgl.ivilyenvora",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1430",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Ivily Envora",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 960,
+        "minHeight": 620,
+        "center": true,
+        "resizable": true,
+        "backgroundColor": "#0E0E10"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+      "freezePrototype": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "efecrtgl",
+    "homepage": "https://github.com/efecrtgl/ivily-envora",
+    "copyright": "© 2026 efecrtgl",
+    "category": "DeveloperTool",
+    "shortDescription": "Ortam değişkeni ve PATH yöneticisi",
+    "longDescription": "Ivily Envora; ortam değişkenlerini, PATH girdilerini, ortam profillerini ve proje ortamlarını güvenli biçimde yöneten, açık kaynaklı bir Windows geliştirici aracıdır.",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Turkish", "English"],
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico",
+        "startMenuFolder": "Ivily Envora"
+      }
+    }
+  }
+}
