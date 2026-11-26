@@ -22,8 +22,17 @@ tarafındaki **sürüm 1** uygulamasını tanımlar.
 JSON istek yazar ve girdiyi kapatır. Envora standart çıktıya **tek** bir JSON yanıt yazar ve çıkar.
 Arayüz açılmaz.
 
-```powershell
-'{"iep":1,"id":"1","method":"iep.hello"}' | & "$env:LOCALAPPDATA\Programs\Ivily Envora\ivily-envora.exe" --iep
+Envora bir Windows (GUI alt sistemi) uygulamasıdır; istemci süreci standart girdi/çıktı kanallarıyla
+başlatıp çıkmasını **beklemelidir** (ör. Rust `std::process::Command`, Node `child_process.spawnSync`,
+.NET `Process` ile `RedirectStandardInput/Output`). PowerShell'in `|` işleci GUI uygulamalarını beklemediği
+için çıktıyı yakalamaz.
+
+```js
+// Node.js örneği
+const { spawnSync } = require('child_process');
+const exe = `${process.env.LOCALAPPDATA}\\Ivily Envora\\ivily-envora.exe`;
+const r = spawnSync(exe, ['--iep'], { input: JSON.stringify({ iep: 1, id: '1', method: 'iep.hello' }), encoding: 'utf8' });
+console.log(JSON.parse(r.stdout));
 ```
 
 - Çıkış kodu: `0` başarılı yanıt, `1` hata yanıtı.

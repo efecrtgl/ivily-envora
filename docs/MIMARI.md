@@ -1,92 +1,106 @@
 # Mimari
 
-Ivily Envora; Rust (Tauri 2) arka ucu ve React (düz JavaScript) ön ucundan oluşan bir Windows masaüstü uygulamasıdır.
-Bu belge katmanları, modül sınırlarını ve temel güvenlik kararlarını açıklar.
+Ivily Envora; Rust (Tauri 2) arka ucu ve React (düz JavaScript) ön ucundan oluşan bir Windows masaüstü
+uygulamasıdır. Bu belge katmanları, modül sınırlarını ve temel güvenlik kararlarını açıklar.
 
 ## Genel bakış
 
 ```
-┌──────────────────────── WebView2 (React) ─────────────────────────┐
-│ app/ (kabuk, gezinme, tema, i18n)   pages/ (ekranlar)              │
-│ components/ui (tasarım sistemi)     lib/api.js (tek IPC kapısı)    │
-└───────────────────────────────┬────────────────────────────────────┘
-                                │ Tauri invoke (yalnızca tanımlı komutlar)
-┌───────────────────────────────┴────────────────────────────────────┐
-│ commands/   ince komut katmanı: doğrulama + servis çağrısı         │
-├────────────────────────────────────────────────────────────────────┤
-│ env/        model, kapsamlar, sağlayıcılar, değişiklik planları    │
-│ pathmgr/    PATH ayrıştırma, analiz, düzenleme                     │
-│ security/   sınıflandırma, maskeleme, DPAPI kasası                 │
-│ profiles/   projects/   snapshots/   compare/   templates/         │
-│ io/         JSON / CSV / .env içe-dışa aktarma                     │
-│ analysis/   kural motoru        discovery/  araç keşfi             │
-│ activity/   settings/   db/     iep/        update/   diagnostics/ │
-├────────────────────────────────────────────────────────────────────┤
-│ platform/   Windows kayıt defteri, WM_SETTINGCHANGE, yükseltme     │
-└────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────── WebView2 (React) ─────────────────────────────┐
+│ app/ kabuk, gezinme, ayarlar, tema     pages/ ekranlar (tembel yüklenir)    │
+│ components/ tasarım sistemi + ortam bileşenleri   i18n/ TR (gömülü), EN     │
+│ lib/api.js  ← tek IPC kapısı                                                │
+└───────────────────────────────────┬────────────────────────────────────────┘
+                                    │ Tauri invoke (yalnızca tanımlı komutlar)
+┌───────────────────────────────────┴────────────────────────────────────────┐
+│ commands/   ince komut katmanı: doğrulama → servis → etkinlik kaydı         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ env/        model · provider (Windows / Memory) · validate · category       │
+│             inspect · plan · apply · elevate · effective                    │
+│ pathmgr/    entries (ayırma, değişiklik) · analyze (bayraklar, çakışmalar)  │
+│ security/   classify (hassasiyet) · overrides · vault (DPAPI)               │
+│ envset      profil/proje değişken ve PATH depolaması (ortak)                │
+│ profiles/   model · store · validate · activate                             │
+│ projects/   model · store · launch          snapshots/  store · manage      │
+│ compare/    io/ (json, csv, dotenv, import, export)    templates/           │
+│ analysis/   kural motoru          discovery/  araç keşfi                    │
+│ activity/   settings/   db/ (geçişler, yedek, geri yükleme)   sources       │
+│ iep/        ekosistem protokolü   update      diagnostics   platform/       │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Ortam kapsamları
+Yürütülebilir dosyanın üç kipi vardır (`main.rs`):
 
-| Kapsam | Kaynak | Kalıcı | Yazma |
-|--------|--------|--------|-------|
-| İşlem (Process) | Uygulamanın kendi işlem ortamı | Hayır | Uygulama kendi ortamını değiştirmez; işlem kapsamı yalnızca **başlatılan** süreçlere verilir (proje terminali). |
-| Kullanıcı (User) | `HKCU\Environment` | Evet | Standart kullanıcı yetkisi yeterlidir. |
-| Sistem (Machine) | `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment` | Evet | Yönetici yetkisi gerekir; yalnızca o değişiklik için yükseltilmiş yardımcı kip çalıştırılır. |
+| Argüman | Kip |
+|---------|-----|
+| — | Normal masaüstü uygulaması |
+| `--envora-elevated-apply <plan> <sonuç>` | Sistem kapsamı için UAC ile başlatılan yardımcı (arayüz yok) |
+| `--iep` | Ivily Ecosystem Protocol: tek istek/yanıt (arayüz yok) — bkz. [IEP.md](IEP.md) |
 
-Kalıcı bir değişiklikten sonra `WM_SETTINGCHANGE("Environment")` yayınlanır. Bu mesajı dinleyen
-uygulamalar (ör. Explorer) ortamlarını yeniler; **çalışan diğer uygulamalar eski ortamla devam eder** ve
-yeni değerleri görmek için yeniden başlatılmaları gerekir. Arayüz bunu her değişiklikte açıkça belirtir.
+## Ortam kapsamları ve sağlayıcılar
 
-## Değişiklik akışı (plan → önizleme → onay → uygulama)
+| Kapsam | Kaynak | Yazma |
+|--------|--------|-------|
+| İşlem | Envora'nın kendi ortamı (başlatıldığı andaki kopya) | Yazılmaz; yalnızca başlatılan süreçlere verilir |
+| Kullanıcı | `HKCU\Environment` | Standart yetki |
+| Sistem | `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment` | Yalnızca o işlem için yükseltilmiş yardımcı |
 
-Kalıcı ortam üzerinde yapılan her değişiklik bir `ChangePlan` nesnesiyle ifade edilir:
+`EnvProvider` arayüzünün iki uygulaması vardır: `WindowsProvider` (kayıt defteri, `REG_SZ`/`REG_EXPAND_SZ`
+korunur, değişiklik sonrası `WM_SETTINGCHANGE`) ve `MemoryProvider` (testler). Kalıcı bir değişiklikten sonra
+açık programlar eski ortamla çalışmaya devam eder; arayüz bunu her değişiklikte belirtir.
 
-1. Ön uç bir plan ister (ör. "Kullanıcı kapsamında `JAVA_HOME` ayarla").
-2. Arka uç planı doğrular (ad kuralları, değer uzunluğu, kapsam yetkisi) ve mevcut değerlerle farkı hesaplar.
-3. Ön uç etkilenen kapsamı ve değişiklikleri (hassas değerler maskeli) gösterir; kullanıcı onaylar.
-4. Arka uç, etkilenen değişkenlerin önceki hallerini otomatik bir anlık görüntüye kaydeder, ardından uygular.
-5. Etkinlik kaydına değer içermeyen bir giriş eklenir.
+`env/effective.rs`, yeni başlatılan bir sürecin göreceği ortamı yaklaşık hesaplar (oturum değişkenleri +
+güncel sistem + güncel kullanıcı değerleri, `%AD%` genişletme, PATH birleştirme). Proje başlatma, araç
+keşfi, karşılaştırma ve analiz bunu kullanır.
 
-Bir plan tek kapsama aittir; başka bir kapsamdaki değişken hiçbir zaman sessizce değiştirilmez.
+## Değişiklik planları
 
-## Sistem kapsamı ve yükseltme
+Kalıcı ortamdaki her değişiklik tek bir kapsama ait bir `ChangePlan` ile ifade edilir:
 
-Uygulama standart kullanıcı yetkisiyle çalışır. Sistem kapsamındaki bir plan onaylandığında:
+```
+plan (ön uç) → validate → resolve → preview (maskeli) → onay → yedek (anlık görüntü) → apply → yayın
+```
 
-1. Plan JSON olarak serileştirilir ve DPAPI (`CRYPTPROTECT_LOCAL_MACHINE`) ile şifrelenmiş geçici bir dosyaya yazılır.
-2. Aynı yürütülebilir dosya `--envora-elevated-apply <dosya>` argümanıyla `runas` fiiliyle başlatılır (UAC istemi).
-3. Yardımcı kip arayüz açmaz; planı çözer, **yalnızca sistem kapsamındaki ortam değişkeni ayarlama/silme**
-   işlemlerine izin verir, uygular, sonucu yazar ve çıkar. Geçici dosya silinir.
+İşlem türleri: `set`, `delete`, `copy` (başka kapsam/addan), `fromProfile`, `fromSnapshot`, `fromImport`.
+Son dördü değeri **arka uçta** bir `ValueSource` (`sources.rs`: veritabanı + içe aktarma önbelleği) üzerinden
+çözer; böylece gizli değerler çoğaltma, yeniden adlandırma, profil uygulama, geri yükleme ve içe aktarma
+sırasında WebView'e hiç gönderilmez.
 
-Yardımcı kip rastgele komut çalıştırmaz; plan şeması dışındaki her girdiyi reddeder.
+`apply_ops` işlemleri sırayla uygular; biri başarısız olursa öncekileri eski hallerine döndürür.
+`env_plan_apply` isteğe bağlı bir bağlam alır (`profileActivate`, `profileDeactivate`, `snapshotRestore`);
+uygulama kayıtları ön uca güvenilmeden sunucu tarafında yazılır.
+
+### Sistem kapsamı ve yükseltme
+
+1. Çözümlenmiş plan JSON olarak serileştirilir, DPAPI (`LocalMachine`) ile şifrelenip
+   `%LOCALAPPDATA%\IvilyEnvora\elevate\` altına yazılır.
+2. Aynı yürütülebilir dosya `runas` ile (UAC) yardımcı kipte başlatılır.
+3. Yardımcı yalnızca bu klasördeki dosyaları kabul eder, planı çözer ve yeniden doğrular, yalnızca sistem
+   kapsamında ayarlama/silme yapar, değer içermeyen bir sonuç yazar.
 
 ## Gizli değerler
 
-- Sınıflandırıcı ad kalıplarına (`*_TOKEN`, `*SECRET*`, `*PASSWORD*`, `*_API_KEY` …) ve değer biçimlerine
-  (ör. `ghp_`, `sk-`, `AKIA`, PEM başlıkları, kimlik bilgisi içeren URL'ler) bakar. Kullanıcı her değişken adı için
-  sınıflandırmayı geçersiz kılabilir.
-- Uygulama veritabanında saklanan hassas değerler (profil, proje, anlık görüntü) Windows DPAPI
-  (`CryptProtectData`, geçerli kullanıcı) ile şifrelenir. Hassas olmayan değerler düz metin olarak saklanır.
-- Etkinlik kaydı, hata mesajları ve tanılama raporları hiçbir zaman değişken **değeri** içermez.
-- Sınırlamalar `docs/GUVENLIK.md` içinde açıklanır: DPAPI aynı Windows kullanıcısı olarak çalışan kötü amaçlı
-  yazılımlara karşı koruma sağlamaz; kalıcı ortam değişkenleri kayıt defterinde zaten düz metin durur.
+Ayrıntılar: [GUVENLIK.md](GUVENLIK.md). Özet: listelerde hassas değerler `None`; gösterme ayrı bir komut ve
+etkinlik kaydına değer olmadan yazılır; kopyalama arka uçta (pano geçmişi dışı, süreli temizleme);
+veritabanında DPAPI; etkinlik kaydı değer alanlarını reddeder.
 
 ## Veri katmanı
 
-SQLite (`rusqlite`, gömülü derleme). Veritabanı `%LOCALAPPDATA%\IvilyEnvora\envora.db` konumundadır.
-Geçişler `PRAGMA user_version` ile sürümlenir ve tek bir işlem (transaction) içinde uygulanır. Ayrıntılar
-`docs/VERITABANI.md` içindedir.
+SQLite (`rusqlite`, gömülü). Sürümlü geçişler, WAL, `secure_delete`. Ayrıntılar: [VERITABANI.md](VERITABANI.md).
 
 ## Ön uç
 
-- Yönlendirme kütüphanesi yoktur; `app/` içindeki gezinme durumu hangi sayfanın tembel (lazy) yükleneceğini belirler.
-- Tüm metinler `src/i18n/tr.js` ve `src/i18n/en.js` içindedir; bileşenler yalnızca `t('anahtar')` kullanır.
-- Tema, `<html data-theme>` özniteliği ve CSS değişkenleriyle uygulanır; tema değişimi uygulama verisine dokunmaz.
+- Yönlendirme kütüphanesi yoktur; `app/nav.js` sayfaları `React.lazy` ile yükler.
 - Tüm arka uç çağrıları `src/lib/api.js` üzerinden geçer.
+- Metinler `src/i18n` altında; Türkçe pakete gömülü, İngilizce yalnızca seçilince yüklenir.
+- Tema yalnızca `<html data-theme>` ve CSS değişkenleriyle uygulanır; veriye dokunmaz.
+- Değişiklik akışı `components/env/ChangeFlow.jsx` ile tektir; değişkenler, PATH, profiller, içe aktarma ve
+  geri yükleme aynı önizleme/onay bileşenini kullanır.
 
 ## Genişletilebilirlik
 
-Analiz kuralları, araç tanımları, içe/dışa aktarma biçimleri ve şablonlar kayıt tabloları (registry) olarak
-tasarlanmıştır; yeni bir kural/biçim eklemek tek bir dosya ve kayıt satırı gerektirir. Üçüncü taraf eklenti
-sistemi **yoktur**; gelecekte eklenirse yetenek sınırları ve izinlerle tasarlanacaktır (bkz. `docs/IEP.md`).
+Kurallar (`analysis/rules.rs`), araç tanımları (`discovery::TOOLS`), hassasiyet kalıpları
+(`security/classify.rs`), yerleşik şablonlar (`templates/builtin.rs`), içe/dışa aktarma biçimleri (`io/`)
+ve IEP yetenekleri (`iep::CAPABILITIES`) tablo olarak tanımlıdır; yeni bir öğe tek bir işlev ve tablo
+satırıyla eklenir. Üçüncü taraf eklenti sistemi **yoktur**; ileride eklenirse yetenek sınırları, izinler ve
+sürümleme ile tasarlanacaktır ve hassas değerlere açık bir izin olmadan erişemeyecektir.
