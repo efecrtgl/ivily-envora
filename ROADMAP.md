@@ -26,8 +26,8 @@ Durum işaretleri: ✅ tamamlandı · 🚧 sürüyor · ⏳ planlandı
 | 15 | Pano ve etkinlik merkezi | ✅ |
 | 16 | Güvenlik sıkılaştırması | ✅ |
 | 17 | Ivily ekosistemi (IEP) hazırlığı | ✅ |
-| 18 | Performans iyileştirme | 🚧 |
-| 19 | Test ve güvenilirlik | ⏳ |
+| 18 | Performans iyileştirme | ✅ |
+| 19 | Test ve güvenilirlik | 🚧 |
 | 20 | Yükleyici ve güncelleme sistemi | ⏳ |
 | 21 | Belgelerin tamamlanması | ⏳ |
 | 22 | Sürüm hazırlığı | ⏳ |
