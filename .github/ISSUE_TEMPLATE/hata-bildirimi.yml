@@ -1,0 +1,50 @@
+name: Hata bildirimi / Bug report
+description: Ivily Envora'da karşılaştığınız bir hatayı bildirin.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Önemli:** Ortam değişkeni değerlerini, API anahtarlarını, token'ları veya parolaları bu forma **yazmayın**.
+        Gerekirse değerleri `***` ile maskeleyin. Uygulamanın tanılama raporu değer içermez.
+
+        **Important:** Do not paste environment variable values, API keys, tokens or passwords. Mask them as `***`.
+  - type: input
+    id: version
+    attributes:
+      label: Ivily Envora sürümü / version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows sürümü / Windows version
+      placeholder: "Windows 11 23H2"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Yeniden üretme adımları / Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Beklenen ve gerçekleşen davranış / Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Tanılama raporu (isteğe bağlı) / Diagnostics report (optional)
+      description: Ayarlar → Uygulama bilgisi → "Tanılama raporunu kopyala". Rapor değişken değerleri içermez.
+      render: text
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Onay / Confirmation
+      options:
+        - label: Bu bildirimde gerçek gizli değer (token, parola, anahtar) bulunmadığını onaylıyorum. / I confirm this report contains no real secrets.
+          required: true
