@@ -1,0 +1,104 @@
+/*
+ * Ivily Envora tasarım belirteçleri.
+ * Tek renkli (siyah/beyaz) temel; renk yalnızca durum bilgisi için ve düşük doygunlukla kullanılır.
+ * Tema değişimi yalnızca <html data-theme> özniteliğini değiştirir.
+ */
+:root {
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 26px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --sidebar-w: 232px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0e0e10;
+  --bg-grad-a: rgba(255, 255, 255, 0.05);
+  --bg-grad-b: rgba(255, 255, 255, 0.015);
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --surface-3: rgba(255, 255, 255, 0.1);
+  --surface-solid: #17171a;
+  --glass-blur: 18px;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #f4f4f5;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #fafafa;
+  --accent-text: #0e0e10;
+  --focus: rgba(255, 255, 255, 0.55);
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  --overlay: rgba(0, 0, 0, 0.55);
+
+  --ok: #6ee7a8;
+  --ok-bg: rgba(110, 231, 168, 0.1);
+  --warn: #f5c76b;
+  --warn-bg: rgba(245, 199, 107, 0.1);
+  --danger: #f7867e;
+  --danger-bg: rgba(247, 134, 126, 0.1);
+  --info: #9cc3ff;
+  --info-bg: rgba(156, 195, 255, 0.1);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f4f5;
+  --bg-grad-a: rgba(0, 0, 0, 0.035);
+  --bg-grad-b: rgba(0, 0, 0, 0.01);
+  --surface: rgba(255, 255, 255, 0.7);
+  --surface-2: rgba(0, 0, 0, 0.04);
+  --surface-3: rgba(0, 0, 0, 0.08);
+  --surface-solid: #ffffff;
+  --glass-blur: 18px;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --text: #111113;
+  --text-2: #52525b;
+  --text-3: #8b8b93;
+  --accent: #111113;
+  --accent-text: #fafafa;
+  --focus: rgba(0, 0, 0, 0.5);
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  --overlay: rgba(10, 10, 12, 0.35);
+
+  --ok: #127a4a;
+  --ok-bg: rgba(18, 122, 74, 0.08);
+  --warn: #9a6408;
+  --warn-bg: rgba(154, 100, 8, 0.09);
+  --danger: #b42318;
+  --danger-bg: rgba(180, 35, 24, 0.08);
+  --info: #1d4ed8;
+  --info-bg: rgba(29, 78, 216, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+  }
+}
