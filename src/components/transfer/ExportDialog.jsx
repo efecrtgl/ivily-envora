@@ -109,7 +109,7 @@ export default function ExportDialog({ preset, onClose }) {
           </Field>
         )}
         {kind !== 'variables' && kind !== 'path' && <p className="muted small">{t('transfer.jsonOnly')}</p>}
-        {kind !== 'path' && (
+        {kind !== 'path' && kind !== 'template' && (
           <>
             <div className="row between">
               <div>

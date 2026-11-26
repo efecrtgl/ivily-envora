@@ -216,7 +216,7 @@ function CreateTarget({ preview, onDone }) {
       const r = await api.importCreate({ token: preview.token, name: name.trim(), directory: kind === 'project' ? directory : null, keepLaunch });
       toast.ok(t('importer.created') + (r.skipped ? ` ${t('importer.skipped', { count: r.skipped })}` : ''));
       onDone();
-      navigate(kind === 'profile' ? 'profiles' : kind === 'project' ? 'projects' : 'snapshots', kind === 'snapshot' ? null : { id: r.id });
+      navigate({ profile: 'profiles', project: 'projects', snapshot: 'snapshots', template: 'templates' }[kind], kind === 'profile' || kind === 'project' ? { id: r.id } : null);
     } catch (e) {
       toast.error(errorText(t, e));
       setBusy(false);

@@ -16,7 +16,7 @@ export default function VariableEditor({ mode, initial = {}, onPlan, onClose, ca
   const t = useT();
   const [scope, setScope] = useState(initial.scope && initial.scope !== 'process' ? initial.scope : 'user');
   const [name, setName] = useState(mode === 'duplicate' || mode === 'rename' ? '' : initial.name || '');
-  const [value, setValue] = useState(mode === 'edit' && !initial.masked ? initial.value ?? '' : '');
+  const [value, setValue] = useState((mode === 'edit' && !initial.masked) || mode === 'create' ? initial.value ?? '' : '');
   const [keepValue, setKeepValue] = useState(mode === 'edit' && initial.masked);
   const [kind, setKind] = useState(mode === 'edit' ? initial.kind : 'auto');
   const [showValue, setShowValue] = useState(false);

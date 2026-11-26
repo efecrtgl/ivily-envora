@@ -89,6 +89,16 @@ export const api = {
   analysisRun: () => call('analysis_run'),
   analysisLast: () => call('analysis_last'),
 
+  // Araçlar ve şablonlar
+  discoveryRun: () => call('discovery_run'),
+  discoveryLast: () => call('discovery_last'),
+  templatesList: () => call('templates_list'),
+  templateGet: (id) => call('template_get', { id }),
+  templateCreate: (input) => call('template_create', { input }),
+  templateUpdate: (id, input) => call('template_update', { id, input }),
+  templateDuplicate: (id, name) => call('template_duplicate', { id, name }),
+  templateDelete: (id) => call('template_delete', { id }),
+
   // Etkinlik
   activityList: (query) => call('activity_list', { query: query || {} }),
   compareSources: (left, right) => call('compare_sources', { left, right }),

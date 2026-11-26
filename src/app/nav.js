@@ -19,6 +19,8 @@ export const NAV_GROUPS = [
     labelKey: 'nav.groupWorkflows',
     items: [
       { id: 'analysis', icon: 'analysis', labelKey: 'nav.analysis' },
+      { id: 'tools', icon: 'tools', labelKey: 'nav.tools' },
+      { id: 'templates', icon: 'template', labelKey: 'nav.templates' },
       { id: 'compare', icon: 'compare', labelKey: 'nav.compare' },
       { id: 'snapshots', icon: 'snapshot', labelKey: 'nav.snapshots' },
       { id: 'transfer', icon: 'importExport', labelKey: 'nav.transfer' },
@@ -34,6 +36,8 @@ export const PAGES = {
   dashboard: lazy(() => import('../pages/Dashboard.jsx')),
   variables: lazy(() => import('../pages/variables/Variables.jsx')),
   analysis: lazy(() => import('../pages/analysis/Analysis.jsx')),
+  tools: lazy(() => import('../pages/tools/Tools.jsx')),
+  templates: lazy(() => import('../pages/templates/Templates.jsx')),
   compare: lazy(() => import('../pages/compare/Compare.jsx')),
   path: lazy(() => import('../pages/path/PathManager.jsx')),
   profiles: lazy(() => import('../pages/profiles/Profiles.jsx')),
