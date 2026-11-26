@@ -4,6 +4,7 @@
 //! İş mantığı servis modüllerinde bulunur; böylece komutsuz birim testleri yazılabilir.
 
 pub mod activity;
+pub mod analysis;
 pub mod app;
 pub mod compare;
 pub mod env;

@@ -21,6 +21,8 @@ pub struct AppState {
     pub restore_note: Option<String>,
     /// Ayrıştırılmış içe aktarmalar (yalnızca bellekte, süreli).
     pub imports: crate::io::import::ImportCache,
+    /// Son analiz sonucu (yalnızca bellekte).
+    pub last_analysis: parking_lot::Mutex<Option<crate::analysis::Report>>,
 }
 
 /// `%LOCALAPPDATA%\IvilyEnvora`
@@ -59,6 +61,7 @@ impl AppState {
             settings_fixed: fixed,
             restore_note,
             imports: Default::default(),
+            last_analysis: Default::default(),
         }
     }
 
@@ -73,6 +76,7 @@ impl AppState {
             settings_fixed: Vec::new(),
             restore_note: None,
             imports: Default::default(),
+            last_analysis: Default::default(),
         }
     }
 }

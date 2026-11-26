@@ -3,6 +3,7 @@
 //! Modül düzeni için `docs/MIMARI.md` belgesine bakın.
 
 pub mod activity;
+pub mod analysis;
 pub mod commands;
 pub mod compare;
 pub mod db;
@@ -37,6 +38,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
             commands::activity::activity_list,
+            commands::analysis::analysis_rules,
+            commands::analysis::analysis_run,
+            commands::analysis::analysis_last,
             commands::settings::settings_get,
             commands::settings::settings_update,
             commands::settings::settings_reset,

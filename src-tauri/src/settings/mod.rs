@@ -26,6 +26,16 @@ pub struct Settings {
     pub performance: Performance,
     pub workspace: Workspace,
     pub ecosystem: Ecosystem,
+    pub analysis: Analysis,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Analysis {
+    /// Devre dışı bırakılan kural kimlikleri.
+    pub disabled_rules: Vec<String>,
+    /// Kural kimliği → `info` | `warning` | `error`
+    pub severity: std::collections::BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -295,6 +305,22 @@ impl Settings {
             f.push("dashboard.sections".into());
         }
 
+        let before = self.analysis.severity.len();
+        self.analysis
+            .severity
+            .retain(|k, v| k.len() <= 80 && ["info", "warning", "error"].contains(&v.as_str()));
+        if self.analysis.severity.len() != before {
+            f.push("analysis.severity".into());
+        }
+        let before = self.analysis.disabled_rules.len();
+        self.analysis
+            .disabled_rules
+            .retain(|k| !k.is_empty() && k.len() <= 80);
+        self.analysis.disabled_rules.dedup();
+        if self.analysis.disabled_rules.len() != before {
+            f.push("analysis.disabledRules".into());
+        }
+
         clamp(
             "security.autoHideSeconds",
             &mut self.security.auto_hide_seconds,
@@ -362,6 +388,7 @@ impl Settings {
         section!("performance", performance);
         section!("workspace", workspace);
         section!("ecosystem", ecosystem);
+        section!("analysis", analysis);
         fixed.extend(s.normalize());
         (s, fixed)
     }
