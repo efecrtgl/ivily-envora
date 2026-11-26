@@ -188,6 +188,22 @@ pub const MIGRATIONS: &[Migration] = &[
         );
     "#,
     },
+    Migration {
+        version: 6,
+        name: "templates",
+        sql: r#"
+        -- Kullanıcı şablonları. Yerleşik şablonlar kodda tanımlıdır. Şablonlar gizli değer içermez.
+        CREATE TABLE templates (
+            id          INTEGER PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE COLLATE NOCASE,
+            description TEXT NOT NULL DEFAULT '',
+            category    TEXT NOT NULL DEFAULT '',
+            data        TEXT NOT NULL,
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        );
+    "#,
+    },
 ];
 
 pub fn latest_version() -> i64 {

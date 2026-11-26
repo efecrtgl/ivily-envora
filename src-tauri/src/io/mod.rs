@@ -33,6 +33,7 @@ pub enum DocKind {
     Project,
     Snapshot,
     Path,
+    Template,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

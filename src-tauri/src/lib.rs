@@ -21,6 +21,7 @@ pub mod settings;
 pub mod snapshots;
 pub mod sources;
 pub mod state;
+pub mod templates;
 
 pub const APP_NAME: &str = "Ivily Envora";
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -44,6 +45,12 @@ pub fn run() {
             commands::analysis::analysis_last,
             commands::discovery::discovery_run,
             commands::discovery::discovery_last,
+            commands::templates::templates_list,
+            commands::templates::template_get,
+            commands::templates::template_create,
+            commands::templates::template_update,
+            commands::templates::template_duplicate,
+            commands::templates::template_delete,
             commands::settings::settings_get,
             commands::settings::settings_update,
             commands::settings::settings_reset,

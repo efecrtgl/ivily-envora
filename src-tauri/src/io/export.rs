@@ -300,6 +300,24 @@ pub fn path(p: &dyn EnvProvider, scope: Scope, format: FileFormat) -> AppResult<
     })
 }
 
+pub fn template(db: &Db, id: &str, en: bool) -> AppResult<Output> {
+    let t = crate::templates::get(db, id, en)?;
+    let input = crate::templates::input_of(&t);
+    let count = input.vars.len();
+    Ok(Output {
+        content: document(
+            DocKind::Template,
+            false,
+            serde_json::to_value(input).unwrap_or_default(),
+        ),
+        result: ExportResult {
+            count,
+            excluded_sensitive: 0,
+            contains_secrets: false,
+        },
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

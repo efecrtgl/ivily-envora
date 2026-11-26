@@ -119,6 +119,10 @@ pub fn import_create(
             import::create_project(&state.db, &b, &request.name, dir, request.keep_launch, &o)?
         }
         io_mod::DocKind::Snapshot => import::create_snapshot(&state.db, &b, &request.name)?,
+        io_mod::DocKind::Template => {
+            import::create_template(&state.db, &b, &request.name)?;
+            CreateResult { id: 0, skipped: 0 }
+        }
         _ => return Err(AppError::validation("wrong_kind", "")),
     };
     activity::record_quiet(
@@ -156,6 +160,9 @@ pub enum ExportRequest {
         scope: Scope,
         format: FileFormat,
     },
+    Template {
+        id: String,
+    },
 }
 
 /// Dışa aktarır ve kullanıcının seçtiği yola yazar. Hassas değerler yalnızca açıkça istenirse yazılır.
@@ -191,6 +198,10 @@ pub fn export_write(
             export::snapshot(&state.db, *id, include_sensitive)?,
         ),
         ExportRequest::Path { scope, format } => ("path", export::path(p, *scope, *format)?),
+        ExportRequest::Template { id } => {
+            let en = state.settings.read().general.language == "en";
+            ("template", export::template(&state.db, id, en)?)
+        }
     };
     io_mod::write_file(Path::new(&dest), &out.content)?;
     activity::record_quiet(

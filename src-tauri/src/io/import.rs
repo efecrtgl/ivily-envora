@@ -29,6 +29,7 @@ pub enum Bundle {
     Project(ProjectDoc),
     Snapshot(SnapshotDoc),
     Path(PathDoc),
+    Template(crate::templates::model::TemplateInput),
 }
 
 impl Bundle {
@@ -39,6 +40,7 @@ impl Bundle {
             Bundle::Project(_) => DocKind::Project,
             Bundle::Snapshot(_) => DocKind::Snapshot,
             Bundle::Path(_) => DocKind::Path,
+            Bundle::Template(_) => DocKind::Template,
         }
     }
     fn vars(&self) -> &[VarDoc] {
@@ -95,6 +97,7 @@ pub fn parse(text: &str, format: FileFormat) -> AppResult<(Bundle, Vec<ImportWar
                 DocKind::Project => Bundle::Project(serde_json::from_value(doc.data)?),
                 DocKind::Snapshot => Bundle::Snapshot(serde_json::from_value(doc.data)?),
                 DocKind::Path => Bundle::Path(serde_json::from_value(doc.data)?),
+                DocKind::Template => Bundle::Template(serde_json::from_value(doc.data)?),
             }
         }
         FileFormat::Csv => {
@@ -372,6 +375,25 @@ pub fn preview(
             pv.contains_secrets = d.items.iter().any(|i| i.sensitive && i.value.is_some());
         }
         Bundle::Path(d) => pv.path_entries = d.entries.clone(),
+        Bundle::Template(d) => {
+            pv.name = Some(d.name.clone());
+            pv.name_taken = taken("templates", &d.name)?;
+            pv.path_entries = d.paths.iter().map(|x| x.path.entry.clone()).collect();
+            pv.vars = d
+                .vars
+                .iter()
+                .map(|v| PreviewVar {
+                    name: v.name.clone(),
+                    value: Some(v.value.clone()),
+                    sensitive: false,
+                    excluded: false,
+                    action: VarAction::Set,
+                    scope: Some(v.scope),
+                    invalid: None,
+                    exists_in: Vec::new(),
+                })
+                .collect();
+        }
         Bundle::Variables(_) => {}
     }
     Ok(pv)
@@ -709,6 +731,15 @@ pub fn compare_items(bundle: &Bundle, overrides: &Overrides) -> Vec<crate::compa
             })
             .collect(),
     }
+}
+
+pub fn create_template(db: &Db, bundle: &Bundle, name: &str) -> AppResult<String> {
+    let Bundle::Template(d) = bundle else {
+        return Err(AppError::validation("wrong_kind", ""));
+    };
+    let mut input = d.clone();
+    input.name = name.to_string();
+    crate::templates::create(db, &input)
 }
 
 #[cfg(test)]
