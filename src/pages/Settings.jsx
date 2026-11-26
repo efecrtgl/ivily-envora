@@ -6,7 +6,7 @@ import { PAGES } from '../app/nav.js';
 import { api, inTauri } from '../lib/api.js';
 import { formatBytes } from '../lib/format.js';
 import { useToast } from '../components/ui/Toast.jsx';
-import { ConfirmDialog } from '../components/ui/Modal.jsx';
+import { ConfirmDialog, Modal } from '../components/ui/Modal.jsx';
 import { Badge, Button, Callout, Card, PageHeader, Segmented, Toggle } from '../components/ui/primitives.jsx';
 
 const START_PAGES = ['dashboard', 'variables', 'path', 'profiles', 'projects'];
@@ -268,6 +268,7 @@ export default function Settings() {
   const { settings: s, meta, set, reset } = useSettings();
   const [info, setInfo] = useState(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [report, setReport] = useState(null);
 
   useEffect(() => {
     api.appInfo().then(setInfo).catch(() => setInfo(null));
@@ -384,6 +385,14 @@ export default function Settings() {
             <dd>MIT</dd>
           </dl>
           <div className="row" style={{ marginTop: 16 }}>
+            <Button
+              size="sm"
+              icon="info"
+              disabled={!inTauri()}
+              onClick={() => api.diagnosticsReport().then(setReport, (e) => toast.error(errorText(t, e)))}
+            >
+              {t('settings.diagnostics')}
+            </Button>
             <Button size="sm" variant="danger" icon="undo" onClick={() => setConfirmReset(true)}>
               {t('settings.reset')}
             </Button>
@@ -391,6 +400,39 @@ export default function Settings() {
         </Card>
       </div>
 
+      {report && (
+        <Modal
+          wide
+          title={t('settings.diagnostics')}
+          onClose={() => setReport(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setReport(null)}>
+                {t('common.close')}
+              </Button>
+              <Button
+                variant="primary"
+                icon="copy"
+                onClick={() =>
+                  navigator.clipboard.writeText(report).then(
+                    () => toast.ok(t('common.copied')),
+                    (e) => toast.error(errorText(t, e)),
+                  )
+                }
+              >
+                {t('common.copy')}
+              </Button>
+            </>
+          }
+        >
+          <p className="small muted" style={{ marginBottom: 10 }}>
+            {t('settings.diagnosticsHint')}
+          </p>
+          <pre className="mono small selectable card" style={{ whiteSpace: 'pre-wrap', margin: 0, padding: 14 }}>
+            {report}
+          </pre>
+        </Modal>
+      )}
       {confirmReset && (
         <ConfirmDialog
           title={t('settings.reset')}

@@ -141,6 +141,8 @@ export default {
     overridesHint: 'Otomatik sınıflandırmanın değiştirildiği değişken adları.',
     noOverrides: 'Geçersiz kılma yok.',
     clearOverride: 'Otomatiğe döndür',
+    diagnostics: 'Tanılama raporu',
+    diagnosticsHint: 'Hata bildirimine ekleyebilirsiniz. Rapor değişken adları veya değerleri içermez; kopyalamadan önce içeriği görebilirsiniz.',
     reset: 'Ayarları sıfırla',
     resetBody: 'Tüm ayarlar varsayılan değerlere döner. Profilleriniz, projeleriniz ve anlık görüntüleriniz etkilenmez.',
     resetDone: 'Ayarlar varsayılana döndürüldü.',

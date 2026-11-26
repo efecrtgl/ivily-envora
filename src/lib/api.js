@@ -75,6 +75,7 @@ export const api = {
   dbRestoreCancel: () => call('db_restore_cancel'),
   dbRestorePending: () => call('db_restore_pending'),
   appRestart: () => call('app_restart'),
+  diagnosticsReport: () => call('diagnostics_report'),
 
   // İçe / dışa aktarma
   importPreview: (path, format) => call('import_preview', { path, format: format || null }),

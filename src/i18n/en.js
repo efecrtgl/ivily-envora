@@ -141,6 +141,8 @@ export default {
     overridesHint: 'Variable names whose automatic classification has been changed.',
     noOverrides: 'No overrides.',
     clearOverride: 'Back to automatic',
+    diagnostics: 'Diagnostics report',
+    diagnosticsHint: 'You can attach this to a bug report. It contains no variable names or values; you can see the content before copying.',
     reset: 'Reset settings',
     resetBody: 'All settings return to their defaults. Your profiles, projects and snapshots are not affected.',
     resetDone: 'Settings were reset to defaults.',
