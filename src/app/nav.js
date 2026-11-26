@@ -28,7 +28,10 @@ export const NAV_GROUPS = [
   },
   {
     labelKey: 'nav.groupSystem',
-    items: [{ id: 'settings', icon: 'settings', labelKey: 'nav.settings' }],
+    items: [
+      { id: 'activity', icon: 'activity', labelKey: 'nav.activity' },
+      { id: 'settings', icon: 'settings', labelKey: 'nav.settings' },
+    ],
   },
 ];
 
@@ -44,6 +47,7 @@ export const PAGES = {
   projects: lazy(() => import('../pages/projects/Projects.jsx')),
   snapshots: lazy(() => import('../pages/snapshots/Snapshots.jsx')),
   transfer: lazy(() => import('../pages/transfer/Transfer.jsx')),
+  activity: lazy(() => import('../pages/activity/Activity.jsx')),
   settings: lazy(() => import('../pages/Settings.jsx')),
 };
 

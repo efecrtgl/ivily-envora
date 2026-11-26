@@ -101,6 +101,7 @@ export const api = {
 
   // Etkinlik
   activityList: (query) => call('activity_list', { query: query || {} }),
+  activityClear: () => call('activity_clear'),
   compareSources: (left, right) => call('compare_sources', { left, right }),
   pathAnalyze: (scope) => call('path_analyze', { scope }),
   pathConflicts: () => call('path_conflicts'),

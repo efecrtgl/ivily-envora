@@ -10,6 +10,49 @@ import { ConfirmDialog } from '../components/ui/Modal.jsx';
 import { Badge, Button, Callout, Card, PageHeader, Segmented, Toggle } from '../components/ui/primitives.jsx';
 
 const START_PAGES = ['dashboard', 'variables', 'path', 'profiles', 'projects'];
+const DASHBOARD_SECTIONS = ['overview', 'pathHealth', 'analysis', 'security', 'profiles', 'projects', 'tools', 'activity'];
+
+/** Görünür bölümleri sıralı tutar; gizli olanlar listede yer almaz. */
+export function toggleSection(list, id, on) {
+  if (on) return list.includes(id) ? list : [...list, id];
+  return list.filter((x) => x !== id);
+}
+
+export function moveSection(list, id, delta) {
+  const i = list.indexOf(id);
+  const j = i + delta;
+  if (i < 0 || j < 0 || j >= list.length) return list;
+  const next = [...list];
+  [next[i], next[j]] = [next[j], next[i]];
+  return next;
+}
+
+function DashboardSection({ sections, onChange }) {
+  const t = useT();
+  const hidden = DASHBOARD_SECTIONS.filter((s) => !sections.includes(s));
+  return (
+    <div className="list">
+      {[...sections, ...hidden].map((id) => {
+        const on = sections.includes(id);
+        const i = sections.indexOf(id);
+        return (
+          <div key={id} className="list-item" style={{ paddingLeft: 0, paddingRight: 0 }}>
+            <Toggle label={t(`dashboard.section.${id}`)} checked={on} onChange={(v) => onChange(toggleSection(sections, id, v))} />
+            <span className="small" style={{ flex: 1, opacity: on ? 1 : 0.55 }}>
+              {t(`dashboard.section.${id}`)}
+            </span>
+            {on && (
+              <>
+                <Button size="sm" variant="ghost" iconOnly icon="arrowUp" title={t('envset.moveUp')} disabled={i === 0} onClick={() => onChange(moveSection(sections, id, -1))} />
+                <Button size="sm" variant="ghost" iconOnly icon="arrowDown" title={t('envset.moveDown')} disabled={i === sections.length - 1} onClick={() => onChange(moveSection(sections, id, 1))} />
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /** Etiket + açıklama solda, denetim sağda olan ayar satırı. */
 export function SettingRow({ label, hint, children }) {
@@ -281,6 +324,10 @@ export default function Settings() {
           <SettingRow label={t('settings.reduceMotion')} hint={t('settings.reduceMotionHint')}>
             <Toggle label={t('settings.reduceMotion')} checked={s.appearance.reduceMotion} onChange={change('appearance.reduceMotion')} />
           </SettingRow>
+        </Card>
+
+        <Card title={t('settings.dashboard')} icon="dashboard" desc={t('settings.dashboardHint')}>
+          <DashboardSection sections={s.dashboard.sections} onChange={change('dashboard.sections')} />
         </Card>
 
         <Card title={t('settings.security')} icon="shield">
