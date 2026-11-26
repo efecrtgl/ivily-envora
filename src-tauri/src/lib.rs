@@ -6,6 +6,7 @@ pub mod activity;
 pub mod commands;
 pub mod db;
 pub mod env;
+pub mod envset;
 pub mod error;
 pub mod pathmgr;
 pub mod platform;

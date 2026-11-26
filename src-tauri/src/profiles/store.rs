@@ -4,40 +4,18 @@ use super::model::*;
 use crate::db::Db;
 use crate::env::inspect::Overrides;
 use crate::env::model::name_key;
-use crate::env::validate::{validate_name, validate_value};
-use crate::env::{Scope, ValueKind};
+use crate::env::Scope;
+use crate::envset::{self, Owner};
 use crate::error::{AppError, AppResult};
-use crate::pathmgr::{entries, PathAction, PathMod};
-use crate::security::{classify, vault};
+use crate::security::vault;
 use rusqlite::{params, OptionalExtension, Transaction};
-use std::collections::HashSet;
 
 pub const MAX_NAME: usize = 100;
-pub const MAX_TAGS: usize = 20;
-pub const MAX_TAG_LEN: usize = 40;
-pub const MAX_VARS: usize = 500;
-pub const MAX_PATHS: usize = 200;
-pub const MAX_PATH_ENTRY: usize = 1024;
 /// Saklanan en fazla revizyon sayısı (profil başına).
 pub const MAX_REVISIONS: i64 = 50;
 
 fn now() -> String {
     chrono::Utc::now().to_rfc3339()
-}
-
-fn action_str(a: VarAction) -> &'static str {
-    match a {
-        VarAction::Set => "set",
-        VarAction::Unset => "unset",
-    }
-}
-
-fn path_action_str(a: PathAction) -> &'static str {
-    match a {
-        PathAction::Prepend => "prepend",
-        PathAction::Append => "append",
-        PathAction::Remove => "remove",
-    }
 }
 
 pub fn validate_profile_name(name: &str) -> AppResult<String> {
@@ -55,190 +33,6 @@ pub fn validate_profile_name(name: &str) -> AppResult<String> {
         return Err(AppError::validation("invalid_profile_name", ""));
     }
     Ok(n.to_string())
-}
-
-fn clean_tags(tags: &[String]) -> AppResult<Vec<String>> {
-    let mut seen = HashSet::new();
-    let mut out = Vec::new();
-    for t in tags {
-        let t = t.trim();
-        if t.is_empty() {
-            continue;
-        }
-        if t.chars().count() > MAX_TAG_LEN || t.chars().any(char::is_control) {
-            return Err(AppError::validation(
-                "invalid_tag",
-                t.chars().take(MAX_TAG_LEN).collect::<String>(),
-            ));
-        }
-        if seen.insert(t.to_lowercase()) {
-            out.push(t.to_string());
-        }
-    }
-    if out.len() > MAX_TAGS {
-        return Err(AppError::validation(
-            "too_many_tags",
-            format!("en fazla {MAX_TAGS}"),
-        ));
-    }
-    Ok(out)
-}
-
-fn clean_paths(paths: &[ProfilePath]) -> AppResult<Vec<ProfilePath>> {
-    if paths.len() > MAX_PATHS {
-        return Err(AppError::validation(
-            "too_many_paths",
-            format!("en fazla {MAX_PATHS}"),
-        ));
-    }
-    let mut seen = HashSet::new();
-    let mut out = Vec::new();
-    for p in paths {
-        let e = p.path.entry.trim();
-        if e.is_empty() {
-            return Err(AppError::validation("invalid_path_entry", ""));
-        }
-        if e.contains(';') || e.contains('\0') || e.chars().count() > MAX_PATH_ENTRY {
-            return Err(AppError::validation(
-                "invalid_path_entry",
-                e.chars().take(80).collect::<String>(),
-            ));
-        }
-        if !seen.insert((p.scope, entries::key(e))) {
-            return Err(AppError::validation("duplicate_path_entry", e.to_string()));
-        }
-        out.push(ProfilePath {
-            path: PathMod {
-                entry: e.to_string(),
-                action: p.path.action,
-            },
-            scope: p.scope,
-        });
-    }
-    Ok(out)
-}
-
-/// Girdiyi doğrular ve tam (değerleri çözülmüş) değişken listesine dönüştürür.
-/// `existing`, güncellemede `keep` ile korunan değerlerin kaynağıdır.
-fn resolve_vars(
-    input: &[VarInput],
-    existing: &[ProfileVar],
-    overrides: &Overrides,
-) -> AppResult<Vec<ProfileVar>> {
-    if input.len() > MAX_VARS {
-        return Err(AppError::validation(
-            "too_many_vars",
-            format!("en fazla {MAX_VARS}"),
-        ));
-    }
-    let mut seen = HashSet::new();
-    let mut out = Vec::with_capacity(input.len());
-    for v in input {
-        let name = v.name.trim().to_string();
-        validate_name(&name)?;
-        if !seen.insert(name_key(&name)) {
-            return Err(AppError::validation("duplicate_var", name));
-        }
-        if v.kind == Some(ValueKind::Other) {
-            return Err(AppError::validation("invalid_kind", name));
-        }
-        let value = match v.action {
-            VarAction::Unset => None,
-            VarAction::Set => {
-                if v.keep {
-                    let source = v.previous_name.as_deref().unwrap_or(&name);
-                    let prev = existing
-                        .iter()
-                        .find(|e| name_key(&e.name) == name_key(source))
-                        .and_then(|e| e.value.clone())
-                        .ok_or_else(|| AppError::validation("missing_value", name.clone()))?;
-                    Some(prev)
-                } else {
-                    let val = v
-                        .value
-                        .clone()
-                        .ok_or_else(|| AppError::validation("missing_value", name.clone()))?;
-                    validate_value(&val)?;
-                    Some(val)
-                }
-            }
-        };
-        let sensitive = v.sensitive.unwrap_or_else(|| {
-            classify::resolve(
-                &name,
-                value.as_deref().unwrap_or(""),
-                overrides.get(&name_key(&name)).copied(),
-            )
-            .sensitive
-        });
-        out.push(ProfileVar {
-            name,
-            value,
-            sensitive,
-            kind: v.kind,
-            scope: v.scope,
-            action: v.action,
-        });
-    }
-    Ok(out)
-}
-
-/// Şifrelenmiş satırlar (işlemden önce hazırlanır; DPAPI hatası veritabanını yarım bırakmaz).
-struct VarRow {
-    var: ProfileVar,
-    plain: Option<String>,
-    enc: Option<Vec<u8>>,
-}
-
-fn encrypt_vars(vars: Vec<ProfileVar>) -> AppResult<Vec<VarRow>> {
-    vars.into_iter()
-        .map(|v| {
-            let (plain, enc) = match (&v.value, v.sensitive) {
-                (Some(val), true) => (None, Some(vault::protect_str(val)?)),
-                (Some(val), false) => (Some(val.clone()), None),
-                (None, _) => (None, None),
-            };
-            Ok(VarRow { var: v, plain, enc })
-        })
-        .collect()
-}
-
-fn write_children(
-    tx: &Transaction,
-    id: i64,
-    rows: &[VarRow],
-    paths: &[ProfilePath],
-) -> AppResult<()> {
-    tx.execute("DELETE FROM profile_vars WHERE profile_id = ?1", [id])?;
-    tx.execute("DELETE FROM profile_paths WHERE profile_id = ?1", [id])?;
-    let mut st = tx.prepare(
-        "INSERT INTO profile_vars(profile_id, position, name, value_plain, value_enc, sensitive, kind, scope, action)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-    )?;
-    for (i, r) in rows.iter().enumerate() {
-        st.execute(params![
-            id,
-            i as i64,
-            r.var.name,
-            r.plain,
-            r.enc,
-            r.var.sensitive as i64,
-            r.var.kind.map(|k| k.as_str()),
-            r.var.scope.as_str(),
-            action_str(r.var.action)
-        ])?;
-    }
-    let mut st = tx.prepare("INSERT INTO profile_paths(profile_id, position, entry, action, scope) VALUES (?1, ?2, ?3, ?4, ?5)")?;
-    for (i, p) in paths.iter().enumerate() {
-        st.execute(params![
-            id,
-            i as i64,
-            p.path.entry,
-            path_action_str(p.path.action),
-            p.scope.as_str()
-        ])?;
-    }
-    Ok(())
 }
 
 fn name_taken(db: &Db, name: &str, except: Option<i64>) -> AppResult<bool> {
@@ -259,9 +53,9 @@ pub fn create(db: &Db, input: &ProfileInput, overrides: &Overrides) -> AppResult
     if name_taken(db, &name, None)? {
         return Err(AppError::Conflict(name));
     }
-    let tags = clean_tags(&input.tags)?;
-    let paths = clean_paths(&input.paths)?;
-    let rows = encrypt_vars(resolve_vars(&input.vars, &[], overrides)?)?;
+    let tags = envset::clean_tags(&input.tags)?;
+    let paths = envset::clean_paths(&input.paths)?;
+    let rows = envset::encrypt_vars(envset::resolve_vars(&input.vars, &[], overrides)?)?;
     let metadata = input
         .metadata
         .clone()
@@ -281,7 +75,7 @@ pub fn create(db: &Db, input: &ProfileInput, overrides: &Overrides) -> AppResult
             ],
         )?;
         let id = tx.last_insert_rowid();
-        write_children(tx, id, &rows, &paths)?;
+        envset::write(tx, Owner::Profile, id, &rows, &paths)?;
         Ok(id)
     })
 }
@@ -319,71 +113,8 @@ pub fn load_full(db: &Db, id: i64) -> AppResult<Profile> {
     let (name, description, category, tags, status, version, metadata, created_at, updated_at) =
         head.ok_or_else(|| AppError::NotFound(format!("profile {id}")))?;
 
-    struct RawVar {
-        name: String,
-        plain: Option<String>,
-        enc: Option<Vec<u8>>,
-        sensitive: bool,
-        kind: Option<String>,
-        scope: String,
-        action: String,
-    }
-    let raw: Vec<RawVar> = db.with(|c| {
-        let mut st = c.prepare(
-            "SELECT name, value_plain, value_enc, sensitive, kind, scope, action FROM profile_vars
-             WHERE profile_id = ?1 ORDER BY position",
-        )?;
-        let rows = st.query_map([id], |r| {
-            Ok(RawVar {
-                name: r.get(0)?,
-                plain: r.get(1)?,
-                enc: r.get(2)?,
-                sensitive: r.get::<_, i64>(3)? != 0,
-                kind: r.get(4)?,
-                scope: r.get(5)?,
-                action: r.get(6)?,
-            })
-        })?;
-        Ok(rows.collect::<Result<Vec<_>, _>>()?)
-    })?;
-    let mut vars = Vec::with_capacity(raw.len());
-    for r in raw {
-        let value = match (r.plain, r.enc) {
-            (_, Some(e)) => Some(vault::unprotect_str(&e)?),
-            (p, None) => p,
-        };
-        vars.push(ProfileVar {
-            name: r.name,
-            value,
-            sensitive: r.sensitive,
-            kind: r.kind.as_deref().and_then(ValueKind::parse),
-            scope: Scope::parse(&r.scope).unwrap_or(Scope::User),
-            action: if r.action == "unset" {
-                VarAction::Unset
-            } else {
-                VarAction::Set
-            },
-        });
-    }
-    let paths: Vec<ProfilePath> = db.with(|c| {
-        let mut st = c.prepare("SELECT entry, action, scope FROM profile_paths WHERE profile_id = ?1 ORDER BY position")?;
-        let rows = st.query_map([id], |r| {
-            let action: String = r.get(1)?;
-            let scope: String = r.get(2)?;
-            Ok(ProfilePath {
-                path: PathMod {
-                    entry: r.get(0)?,
-                    action: match action.as_str() {
-                        "prepend" => PathAction::Prepend,
-                        "remove" => PathAction::Remove,
-                        _ => PathAction::Append,
-                    },
-                },
-                scope: Scope::parse(&scope).unwrap_or(Scope::User),
-            })
-        })?;
-        Ok(rows.collect::<Result<Vec<_>, _>>()?)
-    })?;
+    let vars = envset::read_vars(db, Owner::Profile, id)?;
+    let paths = envset::read_paths(db, Owner::Profile, id)?;
     Ok(Profile {
         id,
         name,
@@ -402,11 +133,7 @@ pub fn load_full(db: &Db, id: i64) -> AppResult<Profile> {
 
 /// Hassas değerleri kaldırır (arayüze gönderilecek biçim).
 pub fn masked(mut p: Profile) -> Profile {
-    for v in &mut p.vars {
-        if v.sensitive {
-            v.value = None;
-        }
-    }
+    envset::mask_vars(&mut p.vars);
     p
 }
 
@@ -444,9 +171,9 @@ pub fn update(
     if name_taken(db, &name, Some(id))? {
         return Err(AppError::Conflict(name));
     }
-    let tags = clean_tags(&input.tags)?;
-    let paths = clean_paths(&input.paths)?;
-    let rows = encrypt_vars(resolve_vars(&input.vars, &current.vars, overrides)?)?;
+    let tags = envset::clean_tags(&input.tags)?;
+    let paths = envset::clean_paths(&input.paths)?;
+    let rows = envset::encrypt_vars(envset::resolve_vars(&input.vars, &current.vars, overrides)?)?;
     let metadata = input
         .metadata
         .clone()
@@ -468,7 +195,7 @@ pub fn update(
                 now()
             ],
         )?;
-        write_children(tx, id, &rows, &paths)?;
+        envset::write(tx, Owner::Profile, id, &rows, &paths)?;
         Ok(version)
     })
 }
@@ -644,6 +371,7 @@ pub fn reveal_var(db: &Db, id: i64, name: &str) -> AppResult<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pathmgr::{PathAction, PathMod};
 
     pub fn var(name: &str, value: &str) -> VarInput {
         VarInput {
