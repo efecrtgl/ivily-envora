@@ -9,6 +9,7 @@ import ScopeBadge from '../../components/env/ScopeBadge.jsx';
 import SecretValue from '../../components/env/SecretValue.jsx';
 import ChangeFlow from '../../components/env/ChangeFlow.jsx';
 import ProfileEditor from './ProfileEditor.jsx';
+import ExportDialog from '../../components/transfer/ExportDialog.jsx';
 
 const SEVERITY_TONE = { error: 'danger', warning: 'warn', info: 'info' };
 
@@ -186,6 +187,7 @@ export default function ProfileDetail({ id, onBack }) {
   const [flows, setFlows] = useState([]); // sıradaki değişiklik akışları
   const [dialog, setDialog] = useState(null); // 'duplicate' | 'rename' | 'delete'
   const [text, setText] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const refresh = () => {
     reload();
@@ -282,6 +284,9 @@ export default function ProfileDetail({ id, onBack }) {
         <Button size="sm" variant="ghost" icon="archive" onClick={() => api.profileSetStatus(id, archived ? 'active' : 'archived').then(refresh).catch((e) => toast.error(errorText(t, e)))}>
           {archived ? t('profiles.unarchive') : t('profiles.archive')}
         </Button>
+        <Button size="sm" variant="ghost" icon="download" onClick={() => setExporting(true)}>
+          {t('common.export')}
+        </Button>
         <Button size="sm" variant="ghost" icon="trash" onClick={() => setDialog('delete')}>
           {t('common.delete')}
         </Button>
@@ -312,6 +317,7 @@ export default function ProfileDetail({ id, onBack }) {
       {tab === 'check' && <Card>{findings.data ? <FindingList findings={findings.data} /> : <Loading />}</Card>}
       {tab === 'history' && <History id={id} onRestored={refresh} />}
 
+      {exporting && <ExportDialog preset={{ kind: 'profile', id }} onClose={() => setExporting(false)} />}
       {editing && (
         <ProfileEditor
           profile={p}

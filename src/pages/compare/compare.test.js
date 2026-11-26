@@ -21,7 +21,7 @@ describe('karşılaştırma filtreleri', () => {
 
 describe('kaynak kodlama', () => {
   it('gidiş-dönüş', () => {
-    for (const s of [{ kind: 'scope', scope: 'user' }, { kind: 'effective' }, { kind: 'profile', id: 3 }, { kind: 'snapshot', id: 12 }]) {
+    for (const s of [{ kind: 'scope', scope: 'user' }, { kind: 'effective' }, { kind: 'profile', id: 3 }, { kind: 'snapshot', id: 12 }, { kind: 'import', token: 'imp-1a:2' }]) {
       expect(decodeSource(encodeSource(s))).toEqual(s);
     }
   });

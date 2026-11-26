@@ -10,6 +10,7 @@ import { Badge, Button, Callout, Card, Empty, Loading, PageHeader, SearchInput, 
 import { VarsTable, PathsTable } from '../profiles/ProfileDetail.jsx';
 import ProjectEditor from './ProjectEditor.jsx';
 import LaunchDialog from './LaunchDialog.jsx';
+import ExportDialog from '../../components/transfer/ExportDialog.jsx';
 
 const KIND_TONE = { added: 'ok', changed: 'warn', removed: 'danger' };
 
@@ -86,6 +87,7 @@ function ProjectDetail({ id, onBack }) {
   const [editing, setEditing] = useState(false);
   const [launching, setLaunching] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   if (loading && !data) return <Loading label={t('common.loading')} />;
   if (error) return <div className="page"><Callout tone="danger">{errorText(t, error)}</Callout></div>;
@@ -128,6 +130,9 @@ function ProjectDetail({ id, onBack }) {
             {p.profileName}
           </Button>
         )}
+        <Button size="sm" variant="ghost" icon="download" onClick={() => setExporting(true)}>
+          {t('common.export')}
+        </Button>
         <Button size="sm" variant="ghost" icon="trash" onClick={() => setDeleting(true)}>
           {t('common.delete')}
         </Button>
@@ -177,6 +182,7 @@ function ProjectDetail({ id, onBack }) {
           }}
         />
       )}
+      {exporting && <ExportDialog preset={{ kind: 'project', id }} onClose={() => setExporting(false)} />}
       {launching && preview.data && <LaunchDialog project={p} preview={preview.data} mode={launching} onClose={() => setLaunching(null)} />}
       {deleting && (
         <ConfirmDialog

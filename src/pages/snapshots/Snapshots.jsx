@@ -11,6 +11,7 @@ import { Badge, Button, Callout, Card, Checkbox, Empty, Field, Loading, PageHead
 import ScopeBadge from '../../components/env/ScopeBadge.jsx';
 import SecretValue from '../../components/env/SecretValue.jsx';
 import ChangeFlow from '../../components/env/ChangeFlow.jsx';
+import ExportDialog from '../../components/transfer/ExportDialog.jsx';
 
 export function filterSnapshots(list, { category, search }) {
   const q = (search || '').trim().toLowerCase();
@@ -137,6 +138,7 @@ function SnapshotDetail({ id, onClose, onChanged }) {
   const [flows, setFlows] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [renaming, setRenaming] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const restore = async () => {
     try {
@@ -188,6 +190,9 @@ function SnapshotDetail({ id, onClose, onChanged }) {
           </Button>
           <Button variant="ghost" icon="edit" onClick={() => setRenaming({ name: meta.name, description: meta.description || '' })}>
             {t('common.rename')}
+          </Button>
+          <Button variant="ghost" icon="download" onClick={() => setExporting(true)}>
+            {t('common.export')}
           </Button>
           <span className="spacer" />
           <Button
@@ -267,6 +272,7 @@ function SnapshotDetail({ id, onClose, onChanged }) {
         </div>
         <p className="xsmall faint">{t('snapshots.restoreNote')}</p>
       </div>
+      {exporting && <ExportDialog preset={{ kind: 'snapshot', id }} onClose={() => setExporting(false)} />}
       {confirmDelete && (
         <ConfirmDialog
           danger

@@ -20,6 +20,7 @@ export const NAV_GROUPS = [
     items: [
       { id: 'compare', icon: 'compare', labelKey: 'nav.compare' },
       { id: 'snapshots', icon: 'snapshot', labelKey: 'nav.snapshots' },
+      { id: 'transfer', icon: 'importExport', labelKey: 'nav.transfer' },
     ],
   },
   {
@@ -36,6 +37,7 @@ export const PAGES = {
   profiles: lazy(() => import('../pages/profiles/Profiles.jsx')),
   projects: lazy(() => import('../pages/projects/Projects.jsx')),
   snapshots: lazy(() => import('../pages/snapshots/Snapshots.jsx')),
+  transfer: lazy(() => import('../pages/transfer/Transfer.jsx')),
   settings: lazy(() => import('../pages/Settings.jsx')),
 };
 

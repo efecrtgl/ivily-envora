@@ -76,6 +76,14 @@ export const api = {
   dbRestorePending: () => call('db_restore_pending'),
   appRestart: () => call('app_restart'),
 
+  // İçe / dışa aktarma
+  importPreview: (path, format) => call('import_preview', { path, format: format || null }),
+  importDiscard: (token) => call('import_discard', { token }),
+  importVariablesPlan: (token, scope, names, policy) => call('import_variables_plan', { token, scope, names, policy }),
+  importPathPlan: (token, scope, mode) => call('import_path_plan', { token, scope, mode }),
+  importCreate: (request) => call('import_create', { request }),
+  exportWrite: (request, path, includeSensitive) => call('export_write', { request, path, includeSensitive }),
+
   // Etkinlik
   activityList: (query) => call('activity_list', { query: query || {} }),
   compareSources: (left, right) => call('compare_sources', { left, right }),

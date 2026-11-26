@@ -5,6 +5,7 @@ export function encodeSource(s) {
   if (!s) return '';
   if (s.kind === 'scope') return `scope:${s.scope}`;
   if (s.kind === 'effective') return 'effective';
+  if (s.kind === 'import') return `import:${s.token}`;
   return `${s.kind}:${s.id}`;
 }
 
@@ -12,6 +13,7 @@ export function decodeSource(v) {
   const [kind, arg] = v.split(':');
   if (kind === 'scope') return { kind, scope: arg };
   if (kind === 'effective') return { kind };
+  if (kind === 'import') return { kind, token: v.slice('import:'.length) };
   return { kind, id: Number(arg) };
 }
 
@@ -19,6 +21,11 @@ export default function SourcePicker({ value, onChange, profiles, projects, snap
   const t = useT();
   return (
     <select className="select" value={encodeSource(value)} onChange={(e) => onChange(decodeSource(e.target.value))} aria-label={label}>
+      {value?.kind === 'import' && (
+        <optgroup label={t('compare.importGroup')}>
+          <option value={encodeSource(value)}>{t('compare.importedFile')}</option>
+        </optgroup>
+      )}
       <optgroup label={t('compare.groupCurrent')}>
         <option value="scope:user">{t('scope.user')}</option>
         <option value="scope:machine">{t('scope.machine')}</option>
