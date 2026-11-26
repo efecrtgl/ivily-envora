@@ -15,9 +15,9 @@ Durum işaretleri: ✅ tamamlandı · 🚧 sürüyor · ⏳ planlandı
 | 4 | Veritabanı ve yapılandırma temeli | ✅ |
 | 5 | Ortam değişkeni inceleme | ✅ |
 | 6 | Ortam değişkeni yönetimi | ✅ |
-| 7 | Ortam profilleri | 🚧 |
-| 8 | Proje ortamları | ⏳ |
-| 9 | PATH yöneticisi | ⏳ |
+| 7 | Ortam profilleri | ✅ |
+| 8 | Proje ortamları | ✅ |
+| 9 | PATH yöneticisi | 🚧 |
 | 10 | Ortam karşılaştırma | ⏳ |
 | 11 | Anlık görüntü ve yedekleme | ⏳ |
 | 12 | İçe ve dışa aktarma | ⏳ |
