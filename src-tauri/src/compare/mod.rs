@@ -5,7 +5,7 @@
 
 use crate::db::Db;
 use crate::env::effective;
-use crate::env::inspect::{view_of, Overrides};
+use crate::env::inspect::{expand_references, view_of, Overrides};
 use crate::env::model::name_key;
 use crate::env::provider::EnvProvider;
 use crate::env::{Scope, ValueKind};
@@ -52,6 +52,9 @@ pub struct Item {
     pub value: Option<String>,
     pub kind: Option<ValueKind>,
     pub sensitive: bool,
+    /// PATH için genişletilmiş değer (girdi karşılaştırması bunun üzerinden yapılır).
+    #[serde(skip)]
+    pub expanded: Option<String>,
 }
 
 pub type Items = BTreeMap<String, Item>;
@@ -74,6 +77,7 @@ fn from_vars(vars: &[ProfileVar], paths: &[ProfilePath]) -> Items {
                 },
                 kind: v.kind,
                 sensitive: v.sensitive,
+                expanded: None,
             },
         );
     }
@@ -97,6 +101,7 @@ fn from_vars(vars: &[ProfileVar], paths: &[ProfilePath]) -> Items {
                 value: Some(desc.join(";")),
                 kind: None,
                 sensitive: false,
+                expanded: None,
             },
         );
     }
@@ -107,8 +112,23 @@ pub fn load(db: &Db, p: &dyn EnvProvider, overrides: &Overrides, src: &Source) -
     Ok(match src {
         Source::Scope { scope } => {
             let mut m = Items::new();
+            let env = effective::fresh_environment(p)?;
             for v in p.list(*scope)? {
                 let sensitive = view_of(&v, overrides).sensitive;
+                if name_key(&v.name) == "PATH" {
+                    let expanded = expand_references(&v.value, &effective::lookup(&env));
+                    add(
+                        &mut m,
+                        Item {
+                            name: v.name,
+                            value: Some(v.value),
+                            kind: Some(v.kind),
+                            sensitive,
+                            expanded: Some(expanded),
+                        },
+                    );
+                    continue;
+                }
                 add(
                     &mut m,
                     Item {
@@ -116,6 +136,7 @@ pub fn load(db: &Db, p: &dyn EnvProvider, overrides: &Overrides, src: &Source) -
                         value: Some(v.value),
                         kind: Some(v.kind),
                         sensitive,
+                        expanded: None,
                     },
                 );
             }
@@ -133,6 +154,7 @@ pub fn load(db: &Db, p: &dyn EnvProvider, overrides: &Overrides, src: &Source) -
                         value: Some(value),
                         kind: None,
                         sensitive,
+                        expanded: None,
                     },
                 );
             }
@@ -179,6 +201,7 @@ pub fn load(db: &Db, p: &dyn EnvProvider, overrides: &Overrides, src: &Source) -
                         value: if i.present { i.value } else { None },
                         kind: Some(i.kind),
                         sensitive: i.sensitive,
+                        expanded: None,
                     },
                 );
             }
@@ -216,6 +239,9 @@ pub struct Row {
     pub sensitive: bool,
     pub kind_changed: bool,
     pub is_path: bool,
+    /// PATH satırlarında genişletilmiş değerler (hassas değilse).
+    pub left_expanded: Option<String>,
+    pub right_expanded: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -265,6 +291,16 @@ pub fn compare(left: &Items, right: &Items) -> Comparison {
             right_present: rv.is_some(),
             sensitive,
             kind_changed,
+            left_expanded: if sensitive {
+                None
+            } else {
+                l.and_then(|i| i.expanded.clone()).or_else(|| lv.cloned())
+            },
+            right_expanded: if sensitive {
+                None
+            } else {
+                r.and_then(|i| i.expanded.clone()).or_else(|| rv.cloned())
+            },
         });
     }
     let count = |s: Status| rows.iter().filter(|r| r.status == s).count();
@@ -293,6 +329,7 @@ mod tests {
             value: value.map(String::from),
             kind: Some(ValueKind::String),
             sensitive,
+            expanded: None,
         }
     }
 
