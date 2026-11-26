@@ -19,6 +19,8 @@ pub struct AppState {
     pub settings_fixed: Vec<String>,
     /// Açılışta uygulanan veritabanı geri yüklemesinin sonucu: `ok:<eski dosya>` veya `error:<kod>`.
     pub restore_note: Option<String>,
+    /// Ayrıştırılmış içe aktarmalar (yalnızca bellekte, süreli).
+    pub imports: crate::io::import::ImportCache,
 }
 
 /// `%LOCALAPPDATA%\IvilyEnvora`
@@ -56,6 +58,7 @@ impl AppState {
             degraded,
             settings_fixed: fixed,
             restore_note,
+            imports: Default::default(),
         }
     }
 
@@ -69,6 +72,7 @@ impl AppState {
             degraded: None,
             settings_fixed: Vec::new(),
             restore_note: None,
+            imports: Default::default(),
         }
     }
 }

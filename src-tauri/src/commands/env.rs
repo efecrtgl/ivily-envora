@@ -117,7 +117,7 @@ pub fn env_plan_preview(state: State<'_, AppState>, plan: ChangePlan) -> AppResu
         state.provider.as_ref(),
         &plan,
         &o,
-        &DbSources::new(&state.db),
+        &DbSources::new(&state.db).with_imports(&state.imports),
     )
 }
 
@@ -154,7 +154,7 @@ pub async fn env_plan_apply(
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
         let o = overrides::all(&state.db)?;
-        let src = DbSources::new(&state.db);
+        let src = DbSources::new(&state.db).with_imports(&state.imports);
         let preview = plan::preview(state.provider.as_ref(), &plan, &o, &src)?;
         let count = |a: Action| preview.items.iter().filter(|i| i.action == a).count();
         let settings = state.settings.read().clone();

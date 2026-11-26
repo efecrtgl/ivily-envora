@@ -39,6 +39,9 @@ pub enum Op {
     /// Değeri bir anlık görüntü öğesinden alır; öğe "yoktu" olarak kayıtlıysa değişken silinir.
     #[serde(rename_all = "camelCase")]
     FromSnapshot { name: String, snapshot_id: i64 },
+    /// Değeri içe aktarma önbelleğinden alır (değer ön uca gönderilmez).
+    #[serde(rename_all = "camelCase")]
+    FromImport { name: String, token: String },
 }
 
 /// Ön uca gönderilmeyen kayıtlı değerlerin kaynağı.
@@ -52,6 +55,10 @@ pub trait ValueSource {
         scope: Scope,
         name: &str,
     ) -> AppResult<Option<(String, ValueKind)>>;
+    /// İçe aktarılan değişkenin değeri ve türü.
+    fn import_var(&self, _token: &str, name: &str) -> AppResult<(String, Option<ValueKind>)> {
+        Err(AppError::NotFound(name.to_string()))
+    }
 }
 
 /// Kayıtlı kaynak gerektirmeyen planlar için.
@@ -78,7 +85,8 @@ impl Op {
             | Op::Delete { name }
             | Op::Copy { name, .. }
             | Op::FromProfile { name, .. }
-            | Op::FromSnapshot { name, .. } => name,
+            | Op::FromSnapshot { name, .. }
+            | Op::FromImport { name, .. } => name,
         }
     }
 }
@@ -208,6 +216,20 @@ pub fn resolve(
                 validate_value(&value)?;
                 let existing = current.get(&name_key(name)).map(|(_, k)| *k);
                 let kind = kind
+                    .or(existing.filter(|k| *k != ValueKind::Other))
+                    .unwrap_or_else(|| infer_kind(&value));
+                Resolved::Set {
+                    name: name.clone(),
+                    value,
+                    kind,
+                }
+            }
+            Op::FromImport { name, token } => {
+                let (value, kind) = src.import_var(token, name)?;
+                validate_value(&value)?;
+                let existing = current.get(&name_key(name)).map(|(_, k)| *k);
+                let kind = kind
+                    .filter(|k| *k != ValueKind::Other)
                     .or(existing.filter(|k| *k != ValueKind::Other))
                     .unwrap_or_else(|| infer_kind(&value));
                 Resolved::Set {

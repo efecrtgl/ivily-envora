@@ -13,6 +13,7 @@ fn kind_of(s: &Source) -> &'static str {
         Source::Profile { .. } => "profile",
         Source::Project { .. } => "project",
         Source::Snapshot { .. } => "snapshot",
+        Source::Import { .. } => "import",
         Source::Inline { .. } => "inline",
     }
 }
@@ -25,8 +26,20 @@ pub fn compare_sources(
 ) -> AppResult<Comparison> {
     let o = overrides::all(&state.db)?;
     let p = state.provider.as_ref();
-    let l = compare::load(&state.db, p, &o, &left)?;
-    let r = compare::load(&state.db, p, &o, &right)?;
+    let resolve = |s: &Source| -> AppResult<Source> {
+        Ok(match s {
+            Source::Import { token } => {
+                let b = state.imports.get(token)?;
+                Source::Inline {
+                    label: "import".into(),
+                    items: crate::io::import::compare_items(&b, &o),
+                }
+            }
+            other => other.clone(),
+        })
+    };
+    let l = compare::load(&state.db, p, &o, &resolve(&left)?)?;
+    let r = compare::load(&state.db, p, &o, &resolve(&right)?)?;
     let c = compare::compare(&l, &r);
     activity::record_quiet(
         &state.db,

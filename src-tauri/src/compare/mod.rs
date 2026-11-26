@@ -37,6 +37,10 @@ pub enum Source {
     Snapshot {
         id: i64,
     },
+    /// İçe aktarma önizlemesindeki dosya (komut katmanında `Inline`a dönüştürülür).
+    Import {
+        token: String,
+    },
     /// Arka uçta ayrıştırılmış ve doğrulanmış girdi (ör. içe aktarma önizlemesi).
     #[serde(skip)]
     Inline {
@@ -206,6 +210,9 @@ pub fn load(db: &Db, p: &dyn EnvProvider, overrides: &Overrides, src: &Source) -
                 );
             }
             m
+        }
+        Source::Import { .. } => {
+            return Err(crate::error::AppError::validation("import_expired", ""))
         }
         Source::Inline { items, .. } => {
             let mut m = Items::new();

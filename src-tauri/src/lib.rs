@@ -9,6 +9,7 @@ pub mod db;
 pub mod env;
 pub mod envset;
 pub mod error;
+pub mod io;
 pub mod pathmgr;
 pub mod platform;
 pub mod profiles;
@@ -62,6 +63,12 @@ pub fn run() {
             commands::env::env_plan_apply,
             commands::path::path_analyze,
             commands::compare::compare_sources,
+            commands::io::import_preview,
+            commands::io::import_discard,
+            commands::io::import_variables_plan,
+            commands::io::import_path_plan,
+            commands::io::import_create,
+            commands::io::export_write,
             commands::path::path_conflicts,
             commands::profiles::profiles_list,
             commands::profiles::profile_get,

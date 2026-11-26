@@ -13,6 +13,7 @@ use std::collections::HashMap;
 
 pub struct DbSources<'a> {
     db: &'a Db,
+    imports: Option<&'a crate::io::import::ImportCache>,
     profiles: RefCell<HashMap<i64, Profile>>,
     snapshots: RefCell<HashMap<i64, Vec<SnapshotItem>>>,
 }
@@ -21,13 +22,28 @@ impl<'a> DbSources<'a> {
     pub fn new(db: &'a Db) -> Self {
         DbSources {
             db,
+            imports: None,
             profiles: RefCell::default(),
             snapshots: RefCell::default(),
         }
     }
 }
 
+impl<'a> DbSources<'a> {
+    pub fn with_imports(mut self, cache: &'a crate::io::import::ImportCache) -> Self {
+        self.imports = Some(cache);
+        self
+    }
+}
+
 impl ValueSource for DbSources<'_> {
+    fn import_var(&self, token: &str, name: &str) -> AppResult<(String, Option<ValueKind>)> {
+        let cache = self
+            .imports
+            .ok_or_else(|| AppError::NotFound(name.to_string()))?;
+        crate::io::import::import_value(&cache.get(token)?, name)
+    }
+
     fn profile_var(&self, profile_id: i64, name: &str) -> AppResult<(String, Option<ValueKind>)> {
         if !self.profiles.borrow().contains_key(&profile_id) {
             let p = profiles::load_full(self.db, profile_id)?;
