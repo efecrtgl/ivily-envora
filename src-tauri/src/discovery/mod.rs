@@ -273,37 +273,76 @@ fn is_app_alias(p: &Path) -> bool {
     entries::key(&p.to_string_lossy()).contains("\\microsoft\\windowsapps\\")
 }
 
-/// Komutu PATH ve PATHEXT sırasına göre arar; tüm eşleşmeleri döndürür.
-pub fn which_all(command: &str, env: &EnvMap) -> Vec<PathBuf> {
-    let path = env.get("PATH").map(|(_, v)| v.as_str()).unwrap_or("");
-    let exts: Vec<String> = env
-        .get("PATHEXT")
-        .map(|(_, v)| {
-            v.split(';')
-                .filter(|e| !e.is_empty())
-                .map(|e| e.to_lowercase())
-                .collect()
-        })
-        .unwrap_or_else(|| vec![".com".into(), ".exe".into(), ".bat".into(), ".cmd".into()]);
-    let mut out: Vec<PathBuf> = Vec::new();
-    let mut seen_dirs = std::collections::HashSet::new();
-    for dir in path
-        .split(';')
-        .map(|d| d.trim().trim_matches('"'))
-        .filter(|d| !d.is_empty())
-    {
-        if !seen_dirs.insert(entries::key(dir)) {
-            continue;
+/// PATH dizinlerinin içerik dizini: her dizin **bir kez** listelenir, aramalar bellekte yapılır.
+/// (Her araç × dizin × uzantı için ayrı dosya sorgusu yapmaktan çok daha hızlıdır.)
+pub struct PathIndex {
+    dirs: Vec<(
+        PathBuf,
+        std::collections::HashMap<String, std::ffi::OsString>,
+    )>,
+    exts: Vec<String>,
+}
+
+impl PathIndex {
+    pub fn new(env: &EnvMap) -> Self {
+        let path = env.get("PATH").map(|(_, v)| v.as_str()).unwrap_or("");
+        let exts: Vec<String> = env
+            .get("PATHEXT")
+            .map(|(_, v)| {
+                v.split(';')
+                    .filter(|e| !e.is_empty())
+                    .map(|e| e.to_lowercase())
+                    .collect()
+            })
+            .unwrap_or_else(|| vec![".com".into(), ".exe".into(), ".bat".into(), ".cmd".into()]);
+        let mut seen = std::collections::HashSet::new();
+        let mut dirs = Vec::new();
+        for dir in path
+            .split(';')
+            .map(|d| d.trim().trim_matches('"'))
+            .filter(|d| !d.is_empty())
+        {
+            if !seen.insert(entries::key(dir)) {
+                continue;
+            }
+            let mut files = std::collections::HashMap::new();
+            if let Ok(rd) = std::fs::read_dir(dir) {
+                for e in rd.flatten() {
+                    // Takma adlar (WindowsApps) yeniden ayrıştırma noktasıdır; file_type onları dosya sayar.
+                    if e.file_type().map(|t| !t.is_dir()).unwrap_or(false) {
+                        files.insert(
+                            e.file_name().to_string_lossy().to_lowercase(),
+                            e.file_name(),
+                        );
+                    }
+                }
+            }
+            dirs.push((PathBuf::from(dir), files));
         }
-        for ext in &exts {
-            let c = Path::new(dir).join(format!("{command}{ext}"));
-            if c.is_file() {
-                out.push(c);
-                break; // aynı dizinde PATHEXT sırasına göre ilk eşleşme çalışır
+        PathIndex { dirs, exts }
+    }
+
+    /// Komutu PATH ve PATHEXT sırasına göre arar; tüm eşleşmeleri döndürür.
+    pub fn which_all(&self, command: &str) -> Vec<PathBuf> {
+        let cmd = command.to_lowercase();
+        let mut out = Vec::new();
+        for (dir, files) in &self.dirs {
+            // aynı dizinde PATHEXT sırasına göre ilk eşleşme çalışır
+            if let Some(name) = self
+                .exts
+                .iter()
+                .find_map(|ext| files.get(&format!("{cmd}{ext}")))
+            {
+                out.push(dir.join(name));
             }
         }
+        out
     }
-    out
+}
+
+/// Tek seferlik arama için kolaylık işlevi.
+pub fn which_all(command: &str, env: &EnvMap) -> Vec<PathBuf> {
+    PathIndex::new(env).which_all(command)
 }
 
 pub struct Options {
@@ -314,11 +353,12 @@ pub struct Options {
 pub fn discover(p: &dyn EnvProvider, opts: &Options) -> AppResult<Report> {
     let started = std::time::Instant::now();
     let env = effective::fresh_environment(p)?;
+    let index = PathIndex::new(&env);
     let mut probed = 0;
     let tools = TOOLS
         .iter()
         .map(|t| {
-            let found = which_all(t.command, &env);
+            let found = index.which_all(t.command);
             let locations: Vec<Location> = found
                 .iter()
                 .map(|p| Location {

@@ -32,6 +32,10 @@ pub struct Finding {
 }
 
 pub struct Context<'a> {
+    /// Kapsam başına PATH raporları (kurallar arasında paylaşılır; bir kez hesaplanır).
+    pub path_reports: std::cell::OnceCell<Vec<crate::pathmgr::analyze::PathReport>>,
+    /// Yürütülebilir dosya çakışmaları (ilk ihtiyaçta bir kez hesaplanır).
+    pub conflicts: std::cell::OnceCell<Vec<crate::pathmgr::analyze::Conflict>>,
     pub user: Vec<EnvVar>,
     pub machine: Vec<EnvVar>,
     pub process: Vec<EnvVar>,
@@ -44,6 +48,23 @@ pub struct Context<'a> {
 impl Context<'_> {
     pub fn persistent(&self) -> impl Iterator<Item = &EnvVar> {
         self.user.iter().chain(self.machine.iter())
+    }
+
+    pub fn path_report(&self, scope: Scope) -> Option<&crate::pathmgr::analyze::PathReport> {
+        self.path_reports
+            .get_or_init(|| {
+                Scope::PERSISTENT
+                    .iter()
+                    .filter_map(|s| crate::pathmgr::analyze::analyze(self.provider, *s).ok())
+                    .collect()
+            })
+            .iter()
+            .find(|r| r.scope == scope)
+    }
+
+    pub fn conflicts(&self) -> &[crate::pathmgr::analyze::Conflict] {
+        self.conflicts
+            .get_or_init(|| crate::pathmgr::analyze::conflicts(self.provider).unwrap_or_default())
     }
 }
 
@@ -123,6 +144,8 @@ pub struct Report {
 pub fn run(db: &Db, p: &dyn EnvProvider, overrides: &Overrides, cfg: &Config) -> AppResult<Report> {
     let started = std::time::Instant::now();
     let ctx = Context {
+        path_reports: Default::default(),
+        conflicts: Default::default(),
         user: p.list(Scope::User)?,
         machine: p.list(Scope::Machine)?,
         process: p.list(Scope::Process)?,

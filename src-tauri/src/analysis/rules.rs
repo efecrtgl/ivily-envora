@@ -37,7 +37,7 @@ fn with(mut x: Finding, k: &'static str, v: impl ToString) -> Finding {
 fn path_flag(ctx: &Context, flag: Flag, rule: &'static str) -> Vec<Finding> {
     let mut out = Vec::new();
     for scope in Scope::PERSISTENT {
-        if let Ok(r) = path_analyze::analyze(ctx.provider, scope) {
+        if let Some(r) = ctx.path_report(scope) {
             for e in r.entries.iter().filter(|e| e.flags.contains(&flag)) {
                 let target = if e.raw.trim().is_empty() {
                     format!("#{}", e.index + 1)
@@ -76,7 +76,7 @@ fn path_unresolved(ctx: &Context) -> Vec<Finding> {
 fn path_cross_scope(ctx: &Context) -> Vec<Finding> {
     // Yalnızca kullanıcı kapsamında raporla (aynı girdi iki kez sayılmasın).
     let mut out = Vec::new();
-    if let Ok(r) = path_analyze::analyze(ctx.provider, Scope::User) {
+    if let Some(r) = ctx.path_report(Scope::User) {
         for e in r
             .entries
             .iter()
@@ -431,9 +431,8 @@ fn profile_drift(ctx: &Context) -> Vec<Finding> {
 /// Microsoft Store uygulama takma adlarının gerçek kurulumları gölgelemesi (ör. python.exe).
 fn store_alias_shadowing(ctx: &Context) -> Vec<Finding> {
     const WATCH: &[&str] = &["python", "python3", "py", "winget", "pip"];
-    path_analyze::conflicts(ctx.provider)
-        .unwrap_or_default()
-        .into_iter()
+    ctx.conflicts()
+        .iter()
         .filter(|c| {
             WATCH.contains(&c.name.as_str())
                 && c.locations.first().is_some_and(|l| l.app_alias)
