@@ -76,6 +76,7 @@ export const api = {
   dbRestorePending: () => call('db_restore_pending'),
   appRestart: () => call('app_restart'),
   diagnosticsReport: () => call('diagnostics_report'),
+  iepPreview: (method) => call('iep_preview', { method }),
 
   // İçe / dışa aktarma
   importPreview: (path, format) => call('import_preview', { path, format: format || null }),

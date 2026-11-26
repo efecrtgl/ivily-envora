@@ -12,6 +12,7 @@ pub mod discovery;
 pub mod env;
 pub mod envset;
 pub mod error;
+pub mod iep;
 pub mod io;
 pub mod pathmgr;
 pub mod platform;
@@ -71,6 +72,7 @@ pub fn run() {
             commands::settings::db_restore_pending,
             commands::app::app_restart,
             commands::app::diagnostics_report,
+            commands::app::iep_preview,
             commands::env::env_list,
             commands::env::env_overview,
             commands::env::env_detail,

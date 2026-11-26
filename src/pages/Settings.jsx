@@ -7,7 +7,7 @@ import { api, inTauri } from '../lib/api.js';
 import { formatBytes } from '../lib/format.js';
 import { useToast } from '../components/ui/Toast.jsx';
 import { ConfirmDialog, Modal } from '../components/ui/Modal.jsx';
-import { Badge, Button, Callout, Card, PageHeader, Segmented, Toggle } from '../components/ui/primitives.jsx';
+import { Badge, Button, Callout, Card, Checkbox, PageHeader, Segmented, Toggle } from '../components/ui/primitives.jsx';
 
 const START_PAGES = ['dashboard', 'variables', 'path', 'profiles', 'projects'];
 const DASHBOARD_SECTIONS = ['overview', 'pathHealth', 'analysis', 'security', 'profiles', 'projects', 'tools', 'activity'];
@@ -25,6 +25,64 @@ export function moveSection(list, id, delta) {
   const next = [...list];
   [next[i], next[j]] = [next[j], next[i]];
   return next;
+}
+
+export const IEP_CAPABILITIES = [
+  ['health', 'envora.health'],
+  ['profiles.summary', 'envora.profiles.summary'],
+  ['path.summary', 'envora.path.summary'],
+  ['analysis.summary', 'envora.analysis.summary'],
+  ['activity.summary', 'envora.activity.summary'],
+  ['workspace.projects', 'envora.workspace.projects'],
+  ['update.metadata', 'envora.update.metadata'],
+];
+
+function EcosystemSection({ eco, onChange }) {
+  const t = useT();
+  const toast = useToast();
+  const [preview, setPreview] = useState(null);
+  const toggleCap = (id, on) => onChange({ ...eco, capabilities: on ? [...eco.capabilities, id] : eco.capabilities.filter((c) => c !== id) });
+  const show = (method) =>
+    api.iepPreview(method).then(
+      (v) => setPreview({ method, text: JSON.stringify(v, null, 2) }),
+      (e) => toast.error(errorText(t, e)),
+    );
+  return (
+    <>
+      <SettingRow label={t('settings.iepEnabled')} hint={t('settings.iepEnabledHint')}>
+        <Toggle label={t('settings.iepEnabled')} checked={eco.iepEnabled} onChange={(v) => onChange({ ...eco, iepEnabled: v })} />
+      </SettingRow>
+      <div className="list" style={{ opacity: eco.iepEnabled ? 1 : 0.55 }}>
+        {IEP_CAPABILITIES.map(([id, method]) => (
+          <div key={id} className="list-item" style={{ paddingLeft: 0, paddingRight: 0 }}>
+            <Checkbox checked={eco.capabilities.includes(id)} disabled={!eco.iepEnabled} onChange={(v) => toggleCap(id, v)}>
+              <span>
+                <span className="small">{t(`settings.iepCap.${id.replace('.', '_')}`)}</span>
+                <span className="mono xsmall faint"> {id}</span>
+              </span>
+            </Checkbox>
+            <span className="spacer" />
+            <Button size="sm" variant="ghost" icon="eye" onClick={() => show(method)} disabled={!inTauri()}>
+              {t('settings.iepPreview')}
+            </Button>
+          </div>
+        ))}
+      </div>
+      <p className="field-hint" style={{ marginTop: 8 }}>
+        {t('settings.iepNote')}
+      </p>
+      {preview && (
+        <Modal wide title={preview.method} onClose={() => setPreview(null)} footer={<Button onClick={() => setPreview(null)}>{t('common.close')}</Button>}>
+          <p className="small muted" style={{ marginBottom: 10 }}>
+            {t('settings.iepPreviewHint')}
+          </p>
+          <pre className="mono xsmall selectable card" style={{ whiteSpace: 'pre-wrap', margin: 0, padding: 14, maxHeight: 420, overflow: 'auto' }}>
+            {preview.text}
+          </pre>
+        </Modal>
+      )}
+    </>
+  );
 }
 
 function DashboardSection({ sections, onChange }) {
@@ -367,6 +425,10 @@ export default function Settings() {
           <SettingRow label={t('settings.excludeInSnapshots')} hint={t('settings.excludeInSnapshotsHint')}>
             <Toggle label={t('settings.excludeInSnapshots')} checked={s.security.excludeSensitiveInSnapshots} onChange={change('security.excludeSensitiveInSnapshots')} />
           </SettingRow>
+        </Card>
+
+        <Card title={t('settings.ecosystem')} icon="link" desc={t('settings.ecosystemHint')}>
+          <EcosystemSection eco={s.ecosystem} onChange={change('ecosystem')} />
         </Card>
 
         <Card title={t('settings.data')} icon="database" desc={t('settings.dataHint')}>

@@ -133,6 +133,8 @@ pub struct Workspace {
 pub struct Ecosystem {
     /// Ivily Ecosystem Protocol özetleri. Varsayılan olarak kapalı.
     pub iep_enabled: bool,
+    /// Kullanıcının izin verdiği IEP yetenekleri (bkz. `iep::CAPABILITIES`).
+    pub capabilities: Vec<String>,
 }
 
 pub const DASHBOARD_SECTIONS: &[&str] = &[
@@ -303,6 +305,16 @@ impl Settings {
             .retain(|s| DASHBOARD_SECTIONS.contains(&s.as_str()) && seen.insert(s.clone()));
         if self.dashboard.sections != before {
             f.push("dashboard.sections".into());
+        }
+
+        let before = self.ecosystem.capabilities.len();
+        self.ecosystem
+            .capabilities
+            .retain(|c| crate::iep::known_capability(c));
+        self.ecosystem.capabilities.sort();
+        self.ecosystem.capabilities.dedup();
+        if self.ecosystem.capabilities.len() != before {
+            f.push("ecosystem.capabilities".into());
         }
 
         let before = self.analysis.severity.len();

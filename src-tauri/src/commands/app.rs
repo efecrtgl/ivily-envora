@@ -41,3 +41,22 @@ pub fn diagnostics_report(
     let settings = state.settings.read().clone();
     crate::diagnostics::report(&state.db, state.provider.as_ref(), &settings, &extra)
 }
+
+/// Bir IEP yönteminin ekosistem uygulamasına göndereceği yanıtı önizler (izinler uygulanmadan).
+#[tauri::command]
+pub fn iep_preview(
+    state: tauri::State<'_, crate::state::AppState>,
+    method: String,
+) -> crate::error::AppResult<serde_json::Value> {
+    let settings = state.settings.read().clone();
+    let ctx = crate::iep::Context {
+        db: &state.db,
+        provider: state.provider.as_ref(),
+        settings: &settings,
+    };
+    if method == "iep.hello" {
+        let r = crate::iep::handle(r#"{"iep":1,"id":"preview","method":"iep.hello"}"#, &ctx);
+        return Ok(r.result.unwrap_or_default());
+    }
+    crate::iep::summary(&ctx, &method)
+}

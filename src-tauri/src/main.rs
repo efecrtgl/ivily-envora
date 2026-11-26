@@ -6,5 +6,9 @@ fn main() {
     if let Some(code) = envora_lib::env::elevate::maybe_run_helper_from_args() {
         std::process::exit(code);
     }
+    // Ivily Ecosystem Protocol: tek istek/yanıt, arayüz açılmaz, arka planda kalmaz.
+    if let Some(code) = envora_lib::iep::maybe_run_cli() {
+        std::process::exit(code);
+    }
     envora_lib::run()
 }

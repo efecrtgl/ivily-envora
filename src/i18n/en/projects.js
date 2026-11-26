@@ -93,6 +93,7 @@ export default {
       security: 'Security',
       backup: 'Backup',
       settings: 'Settings',
+      ecosystem: 'Ecosystem',
     },
     actions: {
       create: 'Created',
@@ -124,6 +125,7 @@ export default {
       database_restore_scheduled: 'Database restore prepared',
       reset: 'Reset',
       activity_cleared: 'Activity history cleared',
+      iep_request: 'Ecosystem request answered',
     },
   },
   tools: {

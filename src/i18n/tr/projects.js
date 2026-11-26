@@ -94,6 +94,7 @@ export default {
       security: 'Güvenlik',
       backup: 'Yedekleme',
       settings: 'Ayarlar',
+      ecosystem: 'Ekosistem',
     },
     actions: {
       create: 'Oluşturuldu',
@@ -125,6 +126,7 @@ export default {
       database_restore_scheduled: 'Veritabanı geri yüklemesi hazırlandı',
       reset: 'Sıfırlandı',
       activity_cleared: 'Etkinlik geçmişi temizlendi',
+      iep_request: 'Ekosistem isteği yanıtlandı',
     },
   },
   tools: {

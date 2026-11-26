@@ -23,7 +23,7 @@ export const DEFAULT_SETTINGS = {
   updates: { channel: 'stable', checkOnStartup: true },
   performance: { probeToolVersions: true, probeTimeoutMs: 3000 },
   workspace: { defaultShell: 'powershell' },
-  ecosystem: { iepEnabled: false },
+  ecosystem: { iepEnabled: false, capabilities: [] },
   analysis: { disabledRules: [], severity: {} },
 };
 
