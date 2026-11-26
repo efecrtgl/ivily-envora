@@ -68,7 +68,7 @@ export function SettingsProvider({ children }) {
       .then((p) => {
         setSettings(p.settings);
         writeLocal(p.settings);
-        setMeta({ loaded: true, fixed: p.fixed || [], degraded: p.degraded });
+        setMeta({ loaded: true, fixed: p.fixed || [], degraded: p.degraded, restoreNote: p.restoreNote });
       })
       .catch(() => setMeta((m) => ({ ...m, loaded: true })));
   }, []);

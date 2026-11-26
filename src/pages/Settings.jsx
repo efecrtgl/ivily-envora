@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
 import { useT, LANGUAGES, errorText, useLang } from '../i18n/index.jsx';
 import { useSettings } from '../app/settings.jsx';
 import { PAGES } from '../app/nav.js';
@@ -111,8 +111,48 @@ function DataSection() {
     }
   };
 
+  const [restore, setRestore] = useState(null); // { path, info }
+  const [pending, setPending] = useState(false);
+  useEffect(() => {
+    if (inTauri()) api.dbRestorePending().then(setPending).catch(() => {});
+  }, []);
+
+  const pickRestore = async () => {
+    const path = await openDialog({ multiple: false, filters: [{ name: 'SQLite', extensions: ['db'] }] });
+    if (!path) return;
+    try {
+      setRestore({ path, info: await api.dbBackupInspect(path) });
+    } catch (e) {
+      toast.error(errorText(t, e));
+    }
+  };
+
+  const scheduleRestore = async () => {
+    try {
+      await api.dbRestoreSchedule(restore.path);
+      setRestore(null);
+      setPending(true);
+    } catch (e) {
+      toast.error(errorText(t, e));
+    }
+  };
+
   return (
-    <dl className="kv">
+    <>
+    {pending && (
+      <Callout tone="warn" icon="history">
+        <div className="row">
+          <span>{t('settings.restorePending')}</span>
+          <Button size="sm" variant="primary" icon="refresh" onClick={() => api.appRestart()}>
+            {t('settings.restartNow')}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => api.dbRestoreCancel().then(() => setPending(false))}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      </Callout>
+    )}
+    <dl className="kv" style={{ marginTop: pending ? 12 : 0 }}>
       <dt>{t('settings.dbSchema')}</dt>
       <dd>{status ? `v${status.schemaVersion}` : '—'}</dd>
       <dt>{t('settings.dbIntegrity')}</dt>
@@ -132,11 +172,49 @@ function DataSection() {
         <Button size="sm" icon="download" onClick={backup} disabled={!inTauri()}>
           {t('settings.backupDb')}
         </Button>
+        <Button size="sm" icon="upload" onClick={pickRestore} disabled={!inTauri()}>
+          {t('settings.restoreDb')}
+        </Button>
         <Button size="sm" variant="ghost" icon="refresh" onClick={load} disabled={!inTauri()}>
           {t('common.refresh')}
         </Button>
       </dd>
     </dl>
+    {restore && (
+      <ConfirmDialog
+        title={t('settings.restoreTitle')}
+        confirmLabel={t('settings.restoreConfirm')}
+        danger
+        disabled={!restore.info.restorable}
+        onCancel={() => setRestore(null)}
+        onConfirm={scheduleRestore}
+      >
+        <div className="stack">
+          <dl className="kv">
+            <dt>{t('settings.dbSchema')}</dt>
+            <dd>
+              v{restore.info.schemaVersion} / v{restore.info.latestVersion}
+            </dd>
+            <dt>{t('settings.dbIntegrity')}</dt>
+            <dd>
+              <Badge tone={restore.info.integrityOk ? 'ok' : 'danger'}>{restore.info.integrityOk ? t('settings.integrityOk') : t('settings.integrityBad')}</Badge>
+            </dd>
+            <dt>{t('nav.profiles')}</dt>
+            <dd>{restore.info.profiles ?? '—'}</dd>
+            <dt>{t('nav.projects')}</dt>
+            <dd>{restore.info.projects ?? '—'}</dd>
+            <dt>{t('nav.snapshots')}</dt>
+            <dd>{restore.info.snapshots ?? '—'}</dd>
+          </dl>
+          {restore.info.restorable ? (
+            <Callout tone="warn">{t('settings.restoreBody')}</Callout>
+          ) : (
+            <Callout tone="danger">{t('settings.restoreInvalid')}</Callout>
+          )}
+        </div>
+      </ConfirmDialog>
+    )}
+    </>
   );
 }
 
@@ -228,6 +306,18 @@ export default function Settings() {
           </SettingRow>
           <SettingRow label={t('settings.retention')} hint={t('settings.retentionHint')}>
             <NumberSetting value={s.activity.retentionDays} min={1} max={3650} suffix={t('settings.days')} onCommit={change('activity.retentionDays')} />
+          </SettingRow>
+        </Card>
+
+        <Card title={t('settings.backup')} icon="snapshot">
+          <SettingRow label={t('settings.autoSnapshot')} hint={t('settings.autoSnapshotHint')}>
+            <Toggle label={t('settings.autoSnapshot')} checked={s.backup.autoSnapshotBeforeChanges} onChange={change('backup.autoSnapshotBeforeChanges')} />
+          </SettingRow>
+          <SettingRow label={t('settings.maxAutoSnapshots')} hint={t('settings.maxAutoSnapshotsHint')}>
+            <NumberSetting value={s.backup.maxAutoSnapshots} min={5} max={1000} onCommit={change('backup.maxAutoSnapshots')} />
+          </SettingRow>
+          <SettingRow label={t('settings.excludeInSnapshots')} hint={t('settings.excludeInSnapshotsHint')}>
+            <Toggle label={t('settings.excludeInSnapshots')} checked={s.security.excludeSensitiveInSnapshots} onChange={change('security.excludeSensitiveInSnapshots')} />
           </SettingRow>
         </Card>
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useT, errorText } from '../../i18n/index.jsx';
 import { api, inTauri } from '../../lib/api.js';
 import { useAsync } from '../../lib/useAsync.js';
@@ -61,6 +61,11 @@ export default function Compare({ params }) {
       (error) => setState({ loading: false, data: null, error }),
     );
   };
+
+  useEffect(() => {
+    if (params?.left && params?.right) run(params.left, params.right);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const rows = useMemo(() => (state.data ? filterRows(state.data.rows, { status, search, hideUnchanged }) : []), [state.data, status, search, hideUnchanged]);
   const d = state.data;

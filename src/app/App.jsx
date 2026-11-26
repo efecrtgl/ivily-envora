@@ -3,7 +3,7 @@ import { I18nProvider, useT } from '../i18n/index.jsx';
 import { SettingsProvider, useSettings } from './settings.jsx';
 import { NAV_GROUPS, PAGES, DEFAULT_PAGE } from './nav.js';
 import { NavContext } from './navigation.js';
-import { ToastProvider } from '../components/ui/Toast.jsx';
+import { ToastProvider, useToast } from '../components/ui/Toast.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import { Loading } from '../components/ui/primitives.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
@@ -59,6 +59,13 @@ function Sidebar({ page, onNavigate }) {
 function Shell() {
   const t = useT();
   const { settings, meta } = useSettings();
+  const toast = useToast();
+  useEffect(() => {
+    if (!meta.restoreNote) return;
+    if (meta.restoreNote.startsWith('ok:')) toast.ok(t('settings.restoreApplied'));
+    else toast.error(t('settings.restoreFailed'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meta.restoreNote]);
   const [route, setRoute] = useState({ page: DEFAULT_PAGE, params: null });
   const navigate = useCallback((page, params = null) => setRoute({ page, params }), []);
 

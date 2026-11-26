@@ -62,6 +62,20 @@ export const api = {
   projectLaunchPreview: (id) => call('project_launch_preview', { id }),
   projectLaunch: (id, target, shell) => call('project_launch', { id, target, shell }),
 
+  // Anlık görüntüler ve yedek
+  snapshotsList: () => call('snapshots_list'),
+  snapshotGet: (id) => call('snapshot_get', { id }),
+  snapshotCreate: (request) => call('snapshot_create', { request }),
+  snapshotUpdate: (id, name, description) => call('snapshot_update', { id, name, description }),
+  snapshotDelete: (id) => call('snapshot_delete', { id }),
+  snapshotReveal: (id, scope, name) => call('snapshot_reveal', { id, scope, name }),
+  snapshotRestorePlans: (id, names) => call('snapshot_restore_plans', { id, names }),
+  dbBackupInspect: (path) => call('db_backup_inspect', { path }),
+  dbRestoreSchedule: (path) => call('db_restore_schedule', { path }),
+  dbRestoreCancel: () => call('db_restore_cancel'),
+  dbRestorePending: () => call('db_restore_pending'),
+  appRestart: () => call('app_restart'),
+
   // Etkinlik
   activityList: (query) => call('activity_list', { query: query || {} }),
   compareSources: (left, right) => call('compare_sources', { left, right }),
