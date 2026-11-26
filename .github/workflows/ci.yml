@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test ve derleme (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Sürüm tutarlılığı
+        run: node scripts/check-version.mjs
+
+      - name: Bağımlılıklar
+        run: npm ci
+
+      - name: Arayüz testleri
+        run: npm test
+
+      - name: Arayüz derlemesi
+        run: npm run build
+
+      - name: Rust biçim denetimi
+        working-directory: src-tauri
+        run: cargo fmt --check
+
+      - name: Clippy
+        working-directory: src-tauri
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      # Testler gerçek kullanıcı/sistem ortamını DEĞİŞTİRMEZ: yazma işlemleri bellek içi sağlayıcıyla
+      # sınanır; gerçek kayıt defteri yalnızca okunur.
+      - name: Rust testleri
+        working-directory: src-tauri
+        run: cargo test --locked
+
+      - name: Bağımlılık güvenlik denetimi
+        run: npm audit --omit=dev --audit-level=high
