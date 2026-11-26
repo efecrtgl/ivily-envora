@@ -4,6 +4,7 @@
 
 pub mod commands;
 pub mod error;
+pub mod security;
 
 pub const APP_NAME: &str = "Ivily Envora";
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
