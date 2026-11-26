@@ -10,10 +10,10 @@ Durum işaretleri: ✅ tamamlandı · 🚧 sürüyor · ⏳ planlandı
 | # | Aşama | Durum |
 |---|-------|-------|
 | 1 | Depo denetimi ve başlatma | ✅ |
-| 2 | Depo belgeleri ve altyapı | 🚧 |
-| 3 | Uygulama kabuğu ve tasarım sistemi | ⏳ |
-| 4 | Veritabanı ve yapılandırma temeli | ⏳ |
-| 5 | Ortam değişkeni inceleme | ⏳ |
+| 2 | Depo belgeleri ve altyapı | ✅ |
+| 3 | Uygulama kabuğu ve tasarım sistemi | ✅ |
+| 4 | Veritabanı ve yapılandırma temeli | ✅ |
+| 5 | Ortam değişkeni inceleme | 🚧 |
 | 6 | Ortam değişkeni yönetimi | ⏳ |
 | 7 | Ortam profilleri | ⏳ |
 | 8 | Proje ortamları | ⏳ |
