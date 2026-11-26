@@ -117,6 +117,7 @@ export default {
       shadowsMachine: 'Aynı ad sistem kapsamında da var; yeni işlemler artık bu kullanıcı değerini görür.',
       critical: 'Windows ve birçok program bu sistem değişkenine bağlıdır.',
     },
+    pathReordered: 'Girdilerin sırası değişiyor.',
     nothing: 'Uygulanacak bir değişiklik yok; değerler zaten aynı.',
     elevationNote: 'Bu değişiklik sistem kapsamını etkiler. Windows yönetici izni (UAC) isteyecek; uygulama yalnızca bu işlem için yükseltilir.',
     criticalNote: 'Kritik bir sistem değişkeni değiştiriliyor veya PATH siliniyor. Devam etmeden önce emin olun.',
@@ -127,5 +128,8 @@ export default {
     applied: '{count} değişiklik uygulandı.',
     restartHint: 'Açık terminalleri ve programları yeni değerleri görmeleri için yeniden başlatın.',
     elevationCancelled: 'Yönetici izni verilmedi; hiçbir değişiklik yapılmadı.',
+  },
+  pathmgr: {
+    emptyEntry: '(boş girdi)',
   },
 };

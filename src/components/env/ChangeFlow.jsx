@@ -9,6 +9,46 @@ import ScopeBadge from './ScopeBadge.jsx';
 
 const ACTION_TONE = { create: 'ok', update: 'warn', delete: 'danger', unchanged: undefined };
 
+/** İki PATH değeri arasındaki girdi farkı (sıra değişikliği ayrıca belirtilir). */
+export function pathEntryDiff(before, after) {
+  const split = (v) => (v ? v.split(';') : []);
+  const key = (e) => e.trim().replace(/\//g, '\\').replace(/\\+$/, '').toLowerCase();
+  const b = split(before);
+  const a = split(after);
+  const bk = new Set(b.map(key));
+  const ak = new Set(a.map(key));
+  const added = a.filter((e) => !bk.has(key(e)));
+  const removed = b.filter((e) => !ak.has(key(e)));
+  const common = (xs, set) => xs.map(key).filter((k) => set.has(k));
+  const reordered = common(b, ak).join('|') !== common(a, bk).join('|');
+  return { added, removed, reordered };
+}
+
+function PathDiff({ before, after }) {
+  const t = useT();
+  const d = pathEntryDiff(before, after);
+  return (
+    <div className="mono xsmall stack tight" style={{ gap: 2 }}>
+      {d.added.map((e, i) => (
+        <div key={`a${i}`} className="diff-new break">
+          + {e || t('pathmgr.emptyEntry')}
+        </div>
+      ))}
+      {d.removed.map((e, i) => (
+        <div key={`r${i}`} className="diff-old break">
+          − {e || t('pathmgr.emptyEntry')}
+        </div>
+      ))}
+      {d.reordered && (
+        <div className="faint" style={{ fontFamily: 'var(--font-sans)' }}>
+          {t('change.pathReordered')}
+        </div>
+      )}
+      {!d.added.length && !d.removed.length && !d.reordered && <span className="faint">—</span>}
+    </div>
+  );
+}
+
 function ValueCell({ value, sensitive, kind }) {
   const t = useT();
   if (sensitive) return <span className="mask faint">••••••••</span>;
@@ -26,7 +66,7 @@ export function PreviewTable({ preview }) {
   const t = useT();
   return (
     <div className="table-wrap" style={{ maxHeight: 340, border: '1px solid var(--border)', borderRadius: 10 }}>
-      <table className="table fixed">
+      <table className="table fixed top">
         <colgroup>
           <col style={{ width: '26%' }} />
           <col style={{ width: 110 }} />
@@ -55,17 +95,25 @@ export function PreviewTable({ preview }) {
               <td>
                 <Badge tone={ACTION_TONE[i.action]}>{t(`change.actions.${i.action}`)}</Badge>
               </td>
-              <td className="small">
-                <ValueCell value={i.before} sensitive={i.sensitive && i.kindBefore != null} kind={i.kindBefore} />
-              </td>
-              <td className="small">
-                <ValueCell value={i.after} sensitive={i.sensitive && i.kindAfter != null} kind={i.kindAfter} />
-                {i.kindBefore && i.kindAfter && i.kindBefore !== i.kindAfter && (
-                  <div className="xsmall faint">
-                    {t(`kind.${i.kindBefore}`)} → {t(`kind.${i.kindAfter}`)}
-                  </div>
-                )}
-              </td>
+              {i.name.toUpperCase() === 'PATH' && i.action === 'update' && !i.sensitive ? (
+                <td className="small" colSpan={2}>
+                  <PathDiff before={i.before} after={i.after} />
+                </td>
+              ) : (
+                <>
+                  <td className="small">
+                    <ValueCell value={i.before} sensitive={i.sensitive && i.kindBefore != null} kind={i.kindBefore} />
+                  </td>
+                  <td className="small">
+                    <ValueCell value={i.after} sensitive={i.sensitive && i.kindAfter != null} kind={i.kindAfter} />
+                    {i.kindBefore && i.kindAfter && i.kindBefore !== i.kindAfter && (
+                      <div className="xsmall faint">
+                        {t(`kind.${i.kindBefore}`)} → {t(`kind.${i.kindAfter}`)}
+                      </div>
+                    )}
+                  </td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>
@@ -78,7 +126,7 @@ export function PreviewTable({ preview }) {
  * Değişiklik akışı: plan → önizleme → onay → uygulama.
  * `plan`: { scope, ops }. `onDone(outcome)` başarılı uygulamadan sonra çağrılır.
  */
-export default function ChangeFlow({ plan, title, onClose, onDone }) {
+export default function ChangeFlow({ plan, context, title, onClose, onDone }) {
   const t = useT();
   const toast = useToast();
   const { settings } = useSettings();
@@ -101,7 +149,7 @@ export default function ChangeFlow({ plan, title, onClose, onDone }) {
     setBusy(true);
     setError(null);
     try {
-      const out = await api.envPlanApply(plan);
+      const out = await api.envPlanApply(plan, context);
       if (settings.notifications.showSuccess) toast.ok(t('change.applied', { count: out.applied }));
       if (settings.notifications.restartHint && out.applied > 0) toast.info(t('change.restartHint'));
       onDone?.(out);

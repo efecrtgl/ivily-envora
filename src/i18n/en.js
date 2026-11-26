@@ -1,8 +1,10 @@
 // English (secondary language). Must have exactly the same keys as tr.js.
 import env from './en/env.js';
+import profiles from './en/profiles.js';
 
 export default {
   ...env,
+  ...profiles,
   app: {
     name: 'Ivily Envora',
     tagline: 'Environment manager',
@@ -14,6 +16,7 @@ export default {
     groupSystem: 'System',
     dashboard: 'Dashboard',
     variables: 'Variables',
+    profiles: 'Profiles',
     settings: 'Settings',
   },
   common: {
@@ -145,6 +148,17 @@ export default {
     invalid_plan: 'Invalid change plan',
     invalid_snapshot_name: 'The snapshot name cannot be empty.',
     unsupported_version: 'Unsupported format version',
+    invalid_profile_name: 'The profile name cannot be empty and may be at most 100 characters.',
+    invalid_tag: 'Invalid tag',
+    too_many_tags: 'Too many tags',
+    too_many_vars: 'Too many variables',
+    too_many_paths: 'Too many PATH entries',
+    invalid_path_entry: 'Invalid PATH entry (cannot be empty or contain ";")',
+    duplicate_path_entry: 'The same PATH entry appears twice in the same scope',
+    duplicate_var: 'The same variable is defined twice',
+    missing_value: 'Missing value',
+    path_conflict: 'PATH is defined both as a variable and as entries',
+    no_backup_for_activation: 'No backup was found for this application; it may have been applied while automatic backups were off.',
     not_in_tauri: 'This operation is only available in the desktop application.',
   },
 };

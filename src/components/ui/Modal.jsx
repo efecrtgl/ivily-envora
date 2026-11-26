@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Button } from './primitives.jsx';
 import { useT } from '../../i18n/index.jsx';
 
-export function Modal({ title, children, footer, onClose, wide, labelledBy = 'modal-title' }) {
+export function Modal({ title, children, footer, onClose, wide, xwide, labelledBy = 'modal-title' }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function Modal({ title, children, footer, onClose, wide, labelledBy = 'mo
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div ref={ref} className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
+      <div ref={ref} className={`modal ${wide ? 'wide' : ''} ${xwide ? 'xwide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
         <div className="modal-header">
           <h2 id={labelledBy}>{title}</h2>
         </div>

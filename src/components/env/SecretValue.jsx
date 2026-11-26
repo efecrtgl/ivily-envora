@@ -12,7 +12,7 @@ const MASK = '••••••••••••';
  * "Göster" düğmesi arka uçtan değeri ister, ayarlanan süre sonunda yeniden gizler.
  * Gösterilen değer yalnızca bu bileşenin durumunda tutulur.
  */
-export default function SecretValue({ v, multiline = false }) {
+export default function SecretValue({ v, multiline = false, reveal: revealFn }) {
   const t = useT();
   const toast = useToast();
   const { settings } = useSettings();
@@ -42,11 +42,19 @@ export default function SecretValue({ v, multiline = false }) {
       return;
     }
     try {
-      setRevealed(await api.envReveal(v.scope, v.name));
+      setRevealed(await (revealFn ? revealFn() : api.envReveal(v.scope, v.name)));
     } catch (err) {
       toast.error(errorText(t, err));
     }
   };
+
+  if (revealFn === null) {
+    return (
+      <span className="mask" aria-label={t('vars.masked')}>
+        {MASK}
+      </span>
+    );
+  }
 
   return (
     <span className="secret">

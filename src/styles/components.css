@@ -547,6 +547,12 @@
 .modal.wide {
   width: min(860px, 100%);
 }
+.modal.xwide {
+  width: min(1180px, 100%);
+}
+.table.top td {
+  vertical-align: top;
+}
 .modal-header {
   padding: var(--sp-5) var(--sp-6) var(--sp-3);
 }
@@ -836,4 +842,31 @@
   flex: none;
   display: flex;
   justify-content: flex-end;
+}
+
+/* ---------- Profil kartı ---------- */
+
+.profile-card {
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast) var(--ease);
+}
+.profile-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.profile-card:active {
+  transform: scale(0.995);
+}
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.8em;
+}
+.back-btn {
+  margin: -8px 0 8px -10px;
 }

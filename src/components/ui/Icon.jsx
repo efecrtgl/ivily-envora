@@ -27,6 +27,7 @@ const P = {
   x: 'M6 6l12 12M18 6L6 18',
   alert: 'M12 3l10 18H2zM12 10v4M12 17h.01',
   chevronRight: 'M9 6l6 6-6 6',
+  chevronLeft: 'M15 6l-6 6 6 6',
   chevronDown: 'M6 9l6 6 6-6',
   arrowUp: 'M12 19V5M6 11l6-6 6 6',
   arrowDown: 'M12 5v14M6 13l6 6 6-6',

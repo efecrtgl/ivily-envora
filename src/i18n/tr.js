@@ -1,8 +1,10 @@
 // Türkçe (birincil dil). Yeni anahtarlar en.js dosyasına da eklenmelidir.
 import env from './tr/env.js';
+import profiles from './tr/profiles.js';
 
 export default {
   ...env,
+  ...profiles,
   app: {
     name: 'Ivily Envora',
     tagline: 'Ortam yöneticisi',
@@ -14,6 +16,7 @@ export default {
     groupSystem: 'Sistem',
     dashboard: 'Pano',
     variables: 'Değişkenler',
+    profiles: 'Profiller',
     settings: 'Ayarlar',
   },
   common: {
@@ -145,6 +148,17 @@ export default {
     invalid_plan: 'Geçersiz değişiklik planı',
     invalid_snapshot_name: 'Anlık görüntü adı boş olamaz.',
     unsupported_version: 'Desteklenmeyen biçim sürümü',
+    invalid_profile_name: 'Profil adı boş olamaz ve en fazla 100 karakter olabilir.',
+    invalid_tag: 'Geçersiz etiket',
+    too_many_tags: 'Çok fazla etiket',
+    too_many_vars: 'Çok fazla değişken',
+    too_many_paths: 'Çok fazla PATH girdisi',
+    invalid_path_entry: 'Geçersiz PATH girdisi (boş olamaz, ";" içeremez)',
+    duplicate_path_entry: 'Aynı PATH girdisi aynı kapsamda iki kez geçiyor',
+    duplicate_var: 'Aynı değişken iki kez tanımlanmış',
+    missing_value: 'Değer eksik',
+    path_conflict: 'PATH hem değişken olarak hem girdi olarak tanımlanmış',
+    no_backup_for_activation: 'Bu uygulama için yedek bulunamadı; otomatik yedekleme kapalıyken uygulanmış olabilir.',
     not_in_tauri: 'Bu işlem yalnızca masaüstü uygulamasında kullanılabilir.',
   },
 };

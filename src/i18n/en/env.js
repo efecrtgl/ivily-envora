@@ -115,6 +115,7 @@ export default {
       shadowsMachine: 'The same name also exists in the system scope; new processes will now see this user value.',
       critical: 'Windows and many programs depend on this system variable.',
     },
+    pathReordered: 'The order of entries changes.',
     nothing: 'There is nothing to apply; the values are already the same.',
     elevationNote: 'This change affects the system scope. Windows will ask for administrator permission (UAC); the app is elevated only for this operation.',
     criticalNote: 'A critical system variable is being changed or PATH is being deleted. Make sure before continuing.',
@@ -125,5 +126,8 @@ export default {
     applied: '{count} change(s) applied.',
     restartHint: 'Restart open terminals and programs so they see the new values.',
     elevationCancelled: 'Administrator permission was not granted; nothing was changed.',
+  },
+  pathmgr: {
+    emptyEntry: '(empty entry)',
   },
 };
