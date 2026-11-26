@@ -211,3 +211,43 @@ code,
     transform: none;
   }
 }
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-8);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: var(--fs-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Yoğun yerleşim */
+:root[data-density='compact'] .page {
+  padding: var(--sp-4) var(--sp-6) var(--sp-6);
+}
+:root[data-density='compact'] .card {
+  padding: var(--sp-4);
+}
+:root[data-density='compact'] .table td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+:root[data-density='compact'] .list-item {
+  padding-top: var(--sp-2);
+  padding-bottom: var(--sp-2);
+}
+
+/* Hareketi azalt */
+:root[data-reduce-motion='true'] {
+  --dur-fast: 0ms;
+  --dur: 0ms;
+}
+/* Yükleme göstergeleri bilgi taşıdığı için dönmeye devam eder; yalnızca giriş animasyonları kapanır. */
+:root[data-reduce-motion='true'] .page,
+:root[data-reduce-motion='true'] .modal,
+:root[data-reduce-motion='true'] .modal-backdrop,
+:root[data-reduce-motion='true'] .toast {
+  animation: none;
+}

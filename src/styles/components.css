@@ -797,3 +797,29 @@
   gap: 6px;
   align-items: center;
 }
+
+/* ---------- Ayar satırı ---------- */
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.setting-row:first-of-type {
+  padding-top: 0;
+}
+.setting-label {
+  font-weight: 500;
+}
+.setting-control {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+}

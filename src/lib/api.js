@@ -15,4 +15,11 @@ export async function call(cmd, args) {
 
 export const api = {
   appInfo: () => call('app_info'),
+
+  // Ayarlar ve veri
+  settingsGet: () => call('settings_get'),
+  settingsUpdate: (settings) => call('settings_update', { settings }),
+  settingsReset: () => call('settings_reset'),
+  dbStatus: () => call('db_status'),
+  dbBackup: (dest) => call('db_backup', { dest }),
 };

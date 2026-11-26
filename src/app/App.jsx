@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { I18nProvider, useT } from '../i18n/index.jsx';
 import { SettingsProvider, useSettings } from './settings.jsx';
 import { NAV_GROUPS, PAGES, DEFAULT_PAGE } from './nav.js';
@@ -11,8 +11,9 @@ import logo from '../../assets/logo.svg';
 
 function Sidebar({ page, onNavigate }) {
   const t = useT();
-  const { ui, update } = useSettings();
-  const nextTheme = ui.theme === 'dark' ? 'light' : ui.theme === 'light' ? 'system' : 'dark';
+  const { settings, set } = useSettings();
+  const theme = settings.appearance.theme;
+  const nextTheme = theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark';
   return (
     <nav className="sidebar" aria-label={t('app.name')}>
       <div className="brand">
@@ -44,11 +45,11 @@ function Sidebar({ page, onNavigate }) {
         <button
           type="button"
           className="btn ghost sm icon-only"
-          title={`${t('theme.toggle')} (${t(`theme.${ui.theme}`)})`}
+          title={`${t('theme.toggle')} (${t(`theme.${theme}`)})`}
           aria-label={t('theme.toggle')}
-          onClick={() => update({ theme: nextTheme })}
+          onClick={() => set('appearance.theme', nextTheme).catch(() => {})}
         >
-          <Icon name={ui.theme === 'light' ? 'sun' : ui.theme === 'dark' ? 'moon' : 'monitor'} size={14} />
+          <Icon name={theme === 'light' ? 'sun' : theme === 'dark' ? 'moon' : 'monitor'} size={14} />
         </button>
       </div>
     </nav>
@@ -57,8 +58,18 @@ function Sidebar({ page, onNavigate }) {
 
 function Shell() {
   const t = useT();
+  const { settings, meta } = useSettings();
   const [route, setRoute] = useState({ page: DEFAULT_PAGE, params: null });
   const navigate = useCallback((page, params = null) => setRoute({ page, params }), []);
+
+  // Ayarlar yüklendiğinde başlangıç sayfasına bir kez geç.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!meta.loaded || started.current) return;
+    started.current = true;
+    const start = settings.general.startPage;
+    if (PAGES[start]) setRoute({ page: start, params: null });
+  }, [meta.loaded, settings.general.startPage]);
   const nav = useMemo(() => ({ ...route, navigate }), [route, navigate]);
   const Page = PAGES[route.page] || PAGES[DEFAULT_PAGE];
 
@@ -67,6 +78,11 @@ function Shell() {
       <div className="shell">
         <Sidebar page={route.page} onNavigate={navigate} />
         <main className="main">
+          {meta.degraded && (
+            <div className="banner" role="alert">
+              <Icon name="alert" /> {t('settings.degraded')}
+            </div>
+          )}
           <ErrorBoundary key={route.page}>
             <Suspense fallback={<Loading label={t('common.loading')} />}>
               <Page params={route.params} />
@@ -79,8 +95,8 @@ function Shell() {
 }
 
 function WithLanguage({ children }) {
-  const { ui } = useSettings();
-  return <I18nProvider lang={ui.language}>{children}</I18nProvider>;
+  const { settings } = useSettings();
+  return <I18nProvider lang={settings.general.language}>{children}</I18nProvider>;
 }
 
 export default function App() {
