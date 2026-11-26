@@ -47,6 +47,8 @@ pub fn run() {
             commands::env::env_copy,
             commands::env::env_plan_preview,
             commands::env::env_plan_apply,
+            commands::path::path_analyze,
+            commands::path::path_conflicts,
             commands::profiles::profiles_list,
             commands::profiles::profile_get,
             commands::profiles::profile_create,

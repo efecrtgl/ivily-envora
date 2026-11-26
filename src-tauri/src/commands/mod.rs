@@ -6,6 +6,7 @@
 pub mod activity;
 pub mod app;
 pub mod env;
+pub mod path;
 pub mod profiles;
 pub mod projects;
 pub mod settings;
