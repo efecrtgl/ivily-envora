@@ -20,8 +20,8 @@ Durum işaretleri: ✅ tamamlandı · 🚧 sürüyor · ⏳ planlandı
 | 9 | PATH yöneticisi | ✅ |
 | 10 | Ortam karşılaştırma | ✅ |
 | 11 | Anlık görüntü ve yedekleme | ✅ |
-| 12 | İçe ve dışa aktarma | 🚧 |
-| 13 | Ortam analizi (zekâ) | ⏳ |
+| 12 | İçe ve dışa aktarma | ✅ |
+| 13 | Ortam analizi (zekâ) | 🚧 |
 | 14 | Geliştirici aracı keşfi | ⏳ |
 | 15 | Pano ve etkinlik merkezi | ⏳ |
 | 16 | Güvenlik sıkılaştırması | ⏳ |
