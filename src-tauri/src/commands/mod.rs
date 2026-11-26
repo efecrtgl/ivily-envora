@@ -5,6 +5,7 @@
 
 pub mod activity;
 pub mod app;
+pub mod compare;
 pub mod env;
 pub mod path;
 pub mod profiles;

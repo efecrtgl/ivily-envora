@@ -4,6 +4,7 @@
 
 pub mod activity;
 pub mod commands;
+pub mod compare;
 pub mod db;
 pub mod env;
 pub mod envset;
@@ -48,6 +49,7 @@ pub fn run() {
             commands::env::env_plan_preview,
             commands::env::env_plan_apply,
             commands::path::path_analyze,
+            commands::compare::compare_sources,
             commands::path::path_conflicts,
             commands::profiles::profiles_list,
             commands::profiles::profile_get,
