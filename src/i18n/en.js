@@ -1,10 +1,12 @@
 // English (secondary language). Must have exactly the same keys as tr.js.
 import env from './en/env.js';
 import profiles from './en/profiles.js';
+import projects from './en/projects.js';
 
 export default {
   ...env,
   ...profiles,
+  ...projects,
   app: {
     name: 'Ivily Envora',
     tagline: 'Environment manager',
@@ -17,6 +19,7 @@ export default {
     dashboard: 'Dashboard',
     variables: 'Variables',
     profiles: 'Profiles',
+    projects: 'Projects',
     settings: 'Settings',
   },
   common: {
@@ -157,6 +160,17 @@ export default {
     duplicate_path_entry: 'The same PATH entry appears twice in the same scope',
     duplicate_var: 'The same variable is defined twice',
     missing_value: 'Missing value',
+    invalid_project_name: 'The project name cannot be empty and may be at most 100 characters.',
+    invalid_identifier: 'Invalid identifier',
+    invalid_directory: 'The project directory must be an absolute path',
+    directory_not_found: 'Directory not found',
+    invalid_shell: 'Invalid shell',
+    invalid_program: 'Invalid program',
+    invalid_args: 'Invalid arguments',
+    invalid_target: 'Invalid launch target',
+    shell_not_found: 'The selected shell was not found on this computer.',
+    program_not_found: 'Program not found (enter a full path or the name of an .exe on PATH).',
+    program_not_allowed: 'Only .exe and .com programs can be launched; script files are not supported.',
     path_conflict: 'PATH is defined both as a variable and as entries',
     no_backup_for_activation: 'No backup was found for this application; it may have been applied while automatic backups were off.',
     not_in_tauri: 'This operation is only available in the desktop application.',

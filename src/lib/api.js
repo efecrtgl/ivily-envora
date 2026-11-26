@@ -50,6 +50,20 @@ export const api = {
   profileDeactivationPlan: (id, scope) => call('profile_deactivation_plan', { id, scope }),
   profileForgetActivation: (id, scope) => call('profile_forget_activation', { id, scope }),
   profileActivations: (id) => call('profile_activations', { id }),
+
+  // Projeler
+  projectsList: () => call('projects_list'),
+  projectGet: (id) => call('project_get', { id }),
+  projectInspectDir: (path) => call('project_inspect_dir', { path }),
+  projectCreate: (input) => call('project_create', { input }),
+  projectUpdate: (id, input) => call('project_update', { id, input }),
+  projectDelete: (id) => call('project_delete', { id }),
+  projectRevealVar: (id, name) => call('project_reveal_var', { id, name }),
+  projectLaunchPreview: (id) => call('project_launch_preview', { id }),
+  projectLaunch: (id, target, shell) => call('project_launch', { id, target, shell }),
+
+  // Etkinlik
+  activityList: (query) => call('activity_list', { query: query || {} }),
   sensitivitySet: (name, sensitive) => call('sensitivity_set', { name, sensitive }),
   sensitivityList: () => call('sensitivity_list'),
 };

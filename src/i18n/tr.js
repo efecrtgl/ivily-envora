@@ -1,10 +1,12 @@
 // Türkçe (birincil dil). Yeni anahtarlar en.js dosyasına da eklenmelidir.
 import env from './tr/env.js';
 import profiles from './tr/profiles.js';
+import projects from './tr/projects.js';
 
 export default {
   ...env,
   ...profiles,
+  ...projects,
   app: {
     name: 'Ivily Envora',
     tagline: 'Ortam yöneticisi',
@@ -17,6 +19,7 @@ export default {
     dashboard: 'Pano',
     variables: 'Değişkenler',
     profiles: 'Profiller',
+    projects: 'Projeler',
     settings: 'Ayarlar',
   },
   common: {
@@ -157,6 +160,17 @@ export default {
     duplicate_path_entry: 'Aynı PATH girdisi aynı kapsamda iki kez geçiyor',
     duplicate_var: 'Aynı değişken iki kez tanımlanmış',
     missing_value: 'Değer eksik',
+    invalid_project_name: 'Proje adı boş olamaz ve en fazla 100 karakter olabilir.',
+    invalid_identifier: 'Geçersiz tanımlayıcı',
+    invalid_directory: 'Proje dizini mutlak bir yol olmalı',
+    directory_not_found: 'Dizin bulunamadı',
+    invalid_shell: 'Geçersiz kabuk',
+    invalid_program: 'Geçersiz program',
+    invalid_args: 'Geçersiz argümanlar',
+    invalid_target: 'Geçersiz başlatma hedefi',
+    shell_not_found: 'Seçilen kabuk bu bilgisayarda bulunamadı.',
+    program_not_found: 'Program bulunamadı (tam yol veya PATH üzerindeki bir .exe adı girin).',
+    program_not_allowed: 'Yalnızca .exe ve .com programları başlatılabilir; betik dosyaları desteklenmez.',
     path_conflict: 'PATH hem değişken olarak hem girdi olarak tanımlanmış',
     no_backup_for_activation: 'Bu uygulama için yedek bulunamadı; otomatik yedekleme kapalıyken uygulanmış olabilir.',
     not_in_tauri: 'Bu işlem yalnızca masaüstü uygulamasında kullanılabilir.',

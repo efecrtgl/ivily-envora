@@ -11,6 +11,7 @@ export const NAV_GROUPS = [
     items: [
       { id: 'variables', icon: 'variable', labelKey: 'nav.variables' },
       { id: 'profiles', icon: 'profile', labelKey: 'nav.profiles' },
+      { id: 'projects', icon: 'project', labelKey: 'nav.projects' },
     ],
   },
   {
@@ -23,6 +24,7 @@ export const PAGES = {
   dashboard: lazy(() => import('../pages/Dashboard.jsx')),
   variables: lazy(() => import('../pages/variables/Variables.jsx')),
   profiles: lazy(() => import('../pages/profiles/Profiles.jsx')),
+  projects: lazy(() => import('../pages/projects/Projects.jsx')),
   settings: lazy(() => import('../pages/Settings.jsx')),
 };
 
