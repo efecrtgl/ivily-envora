@@ -18,6 +18,7 @@ export default {
     groupSystem: 'System',
     dashboard: 'Dashboard',
     variables: 'Variables',
+    path: 'PATH',
     profiles: 'Profiles',
     projects: 'Projects',
     settings: 'Settings',

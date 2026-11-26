@@ -64,6 +64,8 @@ export const api = {
 
   // Etkinlik
   activityList: (query) => call('activity_list', { query: query || {} }),
+  pathAnalyze: (scope) => call('path_analyze', { scope }),
+  pathConflicts: () => call('path_conflicts'),
   sensitivitySet: (name, sensitive) => call('sensitivity_set', { name, sensitive }),
   sensitivityList: () => call('sensitivity_list'),
 };

@@ -18,6 +18,7 @@ export default {
     groupSystem: 'Sistem',
     dashboard: 'Pano',
     variables: 'Değişkenler',
+    path: 'PATH',
     profiles: 'Profiller',
     projects: 'Projeler',
     settings: 'Ayarlar',
