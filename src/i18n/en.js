@@ -14,13 +14,14 @@ export default {
   nav: {
     groupOverview: 'Overview',
     groupEnvironment: 'Environment',
-    groupWorkflows: 'Workflows',
+    groupWorkflows: 'Tools',
     groupSystem: 'System',
     dashboard: 'Dashboard',
     variables: 'Variables',
     path: 'PATH',
     profiles: 'Profiles',
     projects: 'Projects',
+    compare: 'Compare',
     settings: 'Settings',
   },
   common: {

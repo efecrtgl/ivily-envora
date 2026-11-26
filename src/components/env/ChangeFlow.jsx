@@ -24,7 +24,7 @@ export function pathEntryDiff(before, after) {
   return { added, removed, reordered };
 }
 
-function PathDiff({ before, after }) {
+export function PathDiff({ before, after }) {
   const t = useT();
   const d = pathEntryDiff(before, after);
   return (

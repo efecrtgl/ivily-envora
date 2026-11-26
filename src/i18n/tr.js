@@ -14,13 +14,14 @@ export default {
   nav: {
     groupOverview: 'Genel',
     groupEnvironment: 'Ortam',
-    groupWorkflows: 'İş akışları',
+    groupWorkflows: 'Araçlar',
     groupSystem: 'Sistem',
     dashboard: 'Pano',
     variables: 'Değişkenler',
     path: 'PATH',
     profiles: 'Profiller',
     projects: 'Projeler',
+    compare: 'Karşılaştır',
     settings: 'Ayarlar',
   },
   common: {

@@ -886,3 +886,12 @@
   background: var(--surface-solid);
   box-shadow: var(--shadow);
 }
+
+/* ---------- Karşılaştırma ---------- */
+
+.compare-pickers {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  gap: var(--sp-3);
+  align-items: end;
+}

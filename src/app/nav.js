@@ -16,6 +16,10 @@ export const NAV_GROUPS = [
     ],
   },
   {
+    labelKey: 'nav.groupWorkflows',
+    items: [{ id: 'compare', icon: 'compare', labelKey: 'nav.compare' }],
+  },
+  {
     labelKey: 'nav.groupSystem',
     items: [{ id: 'settings', icon: 'settings', labelKey: 'nav.settings' }],
   },
@@ -24,6 +28,7 @@ export const NAV_GROUPS = [
 export const PAGES = {
   dashboard: lazy(() => import('../pages/Dashboard.jsx')),
   variables: lazy(() => import('../pages/variables/Variables.jsx')),
+  compare: lazy(() => import('../pages/compare/Compare.jsx')),
   path: lazy(() => import('../pages/path/PathManager.jsx')),
   profiles: lazy(() => import('../pages/profiles/Profiles.jsx')),
   projects: lazy(() => import('../pages/projects/Projects.jsx')),
