@@ -7,6 +7,7 @@ pub mod commands;
 pub mod db;
 pub mod env;
 pub mod error;
+pub mod platform;
 pub mod security;
 pub mod settings;
 pub mod state;
@@ -36,6 +37,7 @@ pub fn run() {
             commands::env::env_overview,
             commands::env::env_detail,
             commands::env::env_reveal,
+            commands::env::env_copy,
             commands::env::sensitivity_set,
             commands::env::sensitivity_list,
         ])

@@ -62,3 +62,43 @@ pub fn sensitivity_set(
 pub fn sensitivity_list(state: State<'_, AppState>) -> AppResult<Vec<OverrideEntry>> {
     overrides::list(&state.db)
 }
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopyResult {
+    pub sensitive: bool,
+    /// Panonun temizleneceği süre (saniye); 0 = temizlenmez.
+    pub clear_after: u32,
+}
+
+/// Değeri arayüze göndermeden doğrudan panoya kopyalar.
+#[tauri::command]
+pub fn env_copy(state: State<'_, AppState>, scope: Scope, name: String) -> AppResult<CopyResult> {
+    let var = state
+        .provider
+        .get(scope, &name)?
+        .ok_or_else(|| crate::error::AppError::NotFound(name.clone()))?;
+    let o = overrides::all(&state.db)?;
+    let sensitive = inspect::view_of(&var, &o).sensitive;
+    let seq = crate::platform::clipboard::copy_text(&var.value, sensitive)?;
+    let clear_after = if sensitive {
+        state.settings.read().security.clipboard_clear_seconds
+    } else {
+        0
+    };
+    crate::platform::clipboard::schedule_clear(seq, clear_after);
+    if sensitive {
+        activity::record_quiet(
+            &state.db,
+            "security",
+            "copy_sensitive",
+            Some(&name),
+            Status::Ok,
+            Some(json!({ "scope": scope })),
+        );
+    }
+    Ok(CopyResult {
+        sensitive,
+        clear_after,
+    })
+}
