@@ -17,8 +17,8 @@ Durum işaretleri: ✅ tamamlandı · 🚧 sürüyor · ⏳ planlandı
 | 6 | Ortam değişkeni yönetimi | ✅ |
 | 7 | Ortam profilleri | ✅ |
 | 8 | Proje ortamları | ✅ |
-| 9 | PATH yöneticisi | 🚧 |
-| 10 | Ortam karşılaştırma | ⏳ |
+| 9 | PATH yöneticisi | ✅ |
+| 10 | Ortam karşılaştırma | 🚧 |
 | 11 | Anlık görüntü ve yedekleme | ⏳ |
 | 12 | İçe ve dışa aktarma | ⏳ |
 | 13 | Ortam analizi (zekâ) | ⏳ |
