@@ -1,0 +1,96 @@
+name: Sürüm
+
+# vX.Y.Z (veya vX.Y.Z-beta.N) biçimindeki bir etiket gönderildiğinde:
+#   1. etiket ile uygulama sürümünün eşleştiğini doğrular,
+#   2. tüm testleri çalıştırır,
+#   3. NSIS yükleyicisini derler ve güncelleme paketini minisign ile imzalar,
+#   4. yapıtları doğrular (yükleyici, imza, latest.json),
+#   5. SHA-256 özetleriyle birlikte TASLAK bir GitHub sürümü oluşturur.
+# Taslak gözden geçirildikten sonra elle yayımlanır. Herhangi bir adım başarısız olursa hiçbir şey yayımlanmaz.
+#
+# Gerekli depo gizlileri (Settings → Secrets and variables → Actions):
+#   TAURI_SIGNING_PRIVATE_KEY           — ~/.tauri/ivily-envora.key dosyasının içeriği
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  — anahtarın parolası
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Etiket ve uygulama sürümü eşleşmeli
+        run: node scripts/check-version.mjs "${{ github.ref_name }}"
+
+      - name: İmzalama anahtarı tanımlı olmalı
+        shell: pwsh
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if (-not $env:KEY) { Write-Error "TAURI_SIGNING_PRIVATE_KEY gizlisi tanımlı değil. Bkz. docs/SURUM.md"; exit 1 }
+
+      - run: npm ci
+      - run: npm test
+      - name: Rust testleri
+        working-directory: src-tauri
+        run: cargo test --locked
+
+      - name: Sürüm notları (CHANGELOG.md)
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          $text = Get-Content CHANGELOG.md -Raw -Encoding utf8
+          $m = [regex]::Match($text, "(?ms)^## \[$([regex]::Escape($v))\][^\n]*\n(.*?)(?=^## \[|\z)")
+          $notes = if ($m.Success) { $m.Groups[1].Value.Trim() } else { "Değişiklikler için CHANGELOG.md dosyasına bakın." }
+          $notes | Set-Content -Encoding utf8 release-notes.md
+
+      - name: Derle, imzala ve taslak sürüm oluştur
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Ivily Envora ${{ github.ref_name }}"
+          releaseBodyPath: release-notes.md
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+
+      - name: Yapıtları doğrula ve SHA-256 özetlerini yükle
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          $dir = "src-tauri/target/release/bundle/nsis"
+          $exe = Join-Path $dir "Ivily Envora_${v}_x64-setup.exe"
+          if (-not (Test-Path $exe)) { Write-Error "Yükleyici bulunamadı: $exe"; exit 1 }
+          if (-not (Test-Path "$exe.sig")) { Write-Error "Güncelleme imzası bulunamadı"; exit 1 }
+          if ((Get-Item $exe).Length -lt 1MB) { Write-Error "Yükleyici beklenenden küçük"; exit 1 }
+          $appVer = (Get-Item src-tauri/target/release/ivily-envora.exe).VersionInfo.ProductVersion
+          if (-not $appVer.StartsWith($v.Split('-')[0])) { Write-Error "Uygulama sürümü ($appVer) etiketle ($v) eşleşmiyor"; exit 1 }
+          New-Item -ItemType Directory -Force dist-release | Out-Null
+          # GitHub, yüklenen dosya adlarındaki boşlukları noktaya çevirir; özet dosyası aynı adları kullanır.
+          $lines = Get-ChildItem $dir -File | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), ($_.Name -replace ' ', '.') }
+          $lines | Set-Content -Encoding utf8 dist-release/SHA256SUMS.txt
+          Get-Content dist-release/SHA256SUMS.txt
+          gh release upload "${{ github.ref_name }}" dist-release/SHA256SUMS.txt --clobber
