@@ -40,6 +40,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
             commands::activity::activity_list,
+            commands::activity::activity_clear,
             commands::analysis::analysis_rules,
             commands::analysis::analysis_run,
             commands::analysis::analysis_last,
