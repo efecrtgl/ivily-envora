@@ -50,6 +50,37 @@ pub const MIGRATIONS: &[Migration] = &[
         );
     "#,
     },
+    Migration {
+        version: 3,
+        name: "snapshots",
+        sql: r#"
+        CREATE TABLE snapshots (
+            id          INTEGER PRIMARY KEY,
+            name        TEXT NOT NULL,
+            description TEXT,
+            category    TEXT NOT NULL DEFAULT 'manual',      -- manual | auto
+            source      TEXT NOT NULL DEFAULT 'environment', -- environment | profile | project
+            created_at  TEXT NOT NULL,
+            item_count  INTEGER NOT NULL DEFAULT 0,
+            has_secrets INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX idx_snapshots_created ON snapshots(created_at DESC);
+
+        -- Hassas değerler value_enc (DPAPI) sütununda; value_plain yalnızca hassas olmayanlar için.
+        -- present = 0: değişken anlık görüntü anında yoktu (geri yüklemede silinir).
+        CREATE TABLE snapshot_items (
+            snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,
+            scope       TEXT NOT NULL,
+            name        TEXT NOT NULL,
+            kind        TEXT NOT NULL,
+            present     INTEGER NOT NULL DEFAULT 1,
+            sensitive   INTEGER NOT NULL DEFAULT 0,
+            value_plain TEXT,
+            value_enc   BLOB,
+            PRIMARY KEY (snapshot_id, scope, name)
+        );
+    "#,
+    },
 ];
 
 pub fn latest_version() -> i64 {

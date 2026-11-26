@@ -10,6 +10,7 @@ pub mod error;
 pub mod platform;
 pub mod security;
 pub mod settings;
+pub mod snapshots;
 pub mod state;
 
 pub const APP_NAME: &str = "Ivily Envora";
