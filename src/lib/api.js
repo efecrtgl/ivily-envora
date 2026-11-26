@@ -84,6 +84,11 @@ export const api = {
   importCreate: (request) => call('import_create', { request }),
   exportWrite: (request, path, includeSensitive) => call('export_write', { request, path, includeSensitive }),
 
+  // Analiz
+  analysisRules: () => call('analysis_rules'),
+  analysisRun: () => call('analysis_run'),
+  analysisLast: () => call('analysis_last'),
+
   // Etkinlik
   activityList: (query) => call('activity_list', { query: query || {} }),
   compareSources: (left, right) => call('compare_sources', { left, right }),

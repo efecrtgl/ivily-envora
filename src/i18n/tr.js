@@ -2,11 +2,13 @@
 import env from './tr/env.js';
 import profiles from './tr/profiles.js';
 import projects from './tr/projects.js';
+import analysis from './tr/analysis.js';
 
 export default {
   ...env,
   ...profiles,
   ...projects,
+  ...analysis,
   app: {
     name: 'Ivily Envora',
     tagline: 'Ortam yöneticisi',
@@ -19,6 +21,7 @@ export default {
     dashboard: 'Pano',
     variables: 'Değişkenler',
     path: 'PATH',
+    analysis: 'Analiz',
     profiles: 'Profiller',
     projects: 'Projeler',
     compare: 'Karşılaştır',

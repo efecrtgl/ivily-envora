@@ -2,11 +2,13 @@
 import env from './en/env.js';
 import profiles from './en/profiles.js';
 import projects from './en/projects.js';
+import analysis from './en/analysis.js';
 
 export default {
   ...env,
   ...profiles,
   ...projects,
+  ...analysis,
   app: {
     name: 'Ivily Envora',
     tagline: 'Environment manager',
@@ -19,6 +21,7 @@ export default {
     dashboard: 'Dashboard',
     variables: 'Variables',
     path: 'PATH',
+    analysis: 'Analysis',
     profiles: 'Profiles',
     projects: 'Projects',
     compare: 'Compare',

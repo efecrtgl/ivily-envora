@@ -24,6 +24,7 @@ export const DEFAULT_SETTINGS = {
   performance: { probeToolVersions: true, probeTimeoutMs: 3000 },
   workspace: { defaultShell: 'powershell' },
   ecosystem: { iepEnabled: false },
+  analysis: { disabledRules: [], severity: {} },
 };
 
 function readLocal() {
