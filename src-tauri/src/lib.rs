@@ -39,6 +39,8 @@ pub fn run() {
             commands::env::env_detail,
             commands::env::env_reveal,
             commands::env::env_copy,
+            commands::env::env_plan_preview,
+            commands::env::env_plan_apply,
             commands::env::sensitivity_set,
             commands::env::sensitivity_list,
         ])

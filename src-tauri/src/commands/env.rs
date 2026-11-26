@@ -102,3 +102,85 @@ pub fn env_copy(state: State<'_, AppState>, scope: Scope, name: String) -> AppRe
         clear_after,
     })
 }
+
+// ---------- Değişiklik planları ----------
+
+use crate::env::apply::{self, ApplyOptions, ApplyOutcome};
+use crate::env::plan::{self, Action, ChangePlan, Preview};
+use tauri::Manager;
+
+#[tauri::command]
+pub fn env_plan_preview(state: State<'_, AppState>, plan: ChangePlan) -> AppResult<Preview> {
+    let o = overrides::all(&state.db)?;
+    plan::preview(state.provider.as_ref(), &plan, &o)
+}
+
+fn plan_label(plan: &ChangePlan) -> String {
+    let names: Vec<&str> = plan.ops.iter().map(|o| o.target()).take(3).collect();
+    let more = plan.ops.len().saturating_sub(3);
+    let mut s = format!("{} · {}", plan.scope.as_str(), names.join(", "));
+    if more > 0 {
+        s.push_str(&format!(" +{more}"));
+    }
+    s
+}
+
+/// Onaylanmış planı uygular: otomatik yedek → uygulama → `WM_SETTINGCHANGE`.
+/// Sistem kapsamında ve yönetici değilsek yalnızca bu işlem için UAC istemi açılır.
+#[tauri::command]
+pub async fn env_plan_apply(app: tauri::AppHandle, plan: ChangePlan) -> AppResult<ApplyOutcome> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let o = overrides::all(&state.db)?;
+        let preview = plan::preview(state.provider.as_ref(), &plan, &o)?;
+        let count = |a: Action| preview.items.iter().filter(|i| i.action == a).count();
+        let settings = state.settings.read().clone();
+        let label = plan_label(&plan);
+        let opts = ApplyOptions {
+            backup: settings.backup.auto_snapshot_before_changes,
+            max_auto_snapshots: settings.backup.max_auto_snapshots,
+            label: &label,
+        };
+        let data_dir = state.data_dir.clone();
+        let elevate =
+            move |ops: &[plan::Resolved]| crate::env::elevate::run_elevated(&data_dir, ops);
+        let target = if plan.ops.len() == 1 {
+            Some(plan.ops[0].target().to_string())
+        } else {
+            None
+        };
+        let res = apply::apply(
+            &state.db,
+            state.provider.as_ref(),
+            &plan,
+            &o,
+            &opts,
+            &elevate,
+        );
+        let details = json!({
+            "scope": plan.scope,
+            "created": count(Action::Create),
+            "updated": count(Action::Update),
+            "deleted": count(Action::Delete),
+            "elevated": res.as_ref().map(|r| r.elevated).unwrap_or(false),
+            "snapshotId": res.as_ref().ok().and_then(|r| r.snapshot_id),
+            "error": res.as_ref().err().map(|e| e.code()),
+        });
+        let status = match &res {
+            Ok(_) => Status::Ok,
+            Err(crate::error::AppError::Cancelled) => Status::Warning,
+            Err(_) => Status::Failed,
+        };
+        activity::record_quiet(
+            &state.db,
+            "variable",
+            "apply",
+            target.as_deref(),
+            status,
+            Some(details),
+        );
+        res
+    })
+    .await
+    .map_err(|e| crate::error::AppError::Internal(e.to_string()))?
+}
