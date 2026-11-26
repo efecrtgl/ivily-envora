@@ -18,3 +18,9 @@ pub fn app_info() -> AppInfo {
         arch: std::env::consts::ARCH,
     }
 }
+
+/// Uygulamayı yeniden başlatır (ör. veritabanı geri yüklemesinden sonra).
+#[tauri::command]
+pub fn app_restart(app: tauri::AppHandle) {
+    app.restart();
+}

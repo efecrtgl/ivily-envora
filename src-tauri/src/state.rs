@@ -17,6 +17,8 @@ pub struct AppState {
     pub degraded: Option<String>,
     /// Okuma sırasında varsayılana döndürülen ayar alanları (arayüzde bilgi olarak gösterilir).
     pub settings_fixed: Vec<String>,
+    /// Açılışta uygulanan veritabanı geri yüklemesinin sonucu: `ok:<eski dosya>` veya `error:<kod>`.
+    pub restore_note: Option<String>,
 }
 
 /// `%LOCALAPPDATA%\IvilyEnvora`
@@ -29,6 +31,11 @@ pub fn data_dir() -> AppResult<PathBuf> {
 impl AppState {
     pub fn init() -> AppState {
         let dir = data_dir().unwrap_or_else(|_| std::env::temp_dir().join("IvilyEnvora"));
+        let restore_note = match crate::db::restore::apply_pending(&dir) {
+            Ok(Some(saved)) => Some(format!("ok:{}", saved.display())),
+            Ok(None) => None,
+            Err(e) => Some(format!("error:{}", e.code())),
+        };
         let (db, degraded) = match Db::open(&dir.join("envora.db")) {
             Ok(db) => (db, None),
             Err(e) => (
@@ -48,6 +55,7 @@ impl AppState {
             data_dir: dir,
             degraded,
             settings_fixed: fixed,
+            restore_note,
         }
     }
 
@@ -60,6 +68,7 @@ impl AppState {
             data_dir: std::env::temp_dir(),
             degraded: None,
             settings_fixed: Vec::new(),
+            restore_note: None,
         }
     }
 }

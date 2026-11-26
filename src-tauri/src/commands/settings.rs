@@ -12,6 +12,7 @@ pub struct SettingsPayload {
     /// Okuma sırasında varsayılana döndürülen alanlar.
     pub fixed: Vec<String>,
     pub degraded: Option<String>,
+    pub restore_note: Option<String>,
 }
 
 #[tauri::command]
@@ -20,6 +21,7 @@ pub fn settings_get(state: State<'_, AppState>) -> SettingsPayload {
         settings: state.settings.read().clone(),
         fixed: state.settings_fixed.clone(),
         degraded: state.degraded.clone(),
+        restore_note: state.restore_note.clone(),
     }
 }
 
@@ -66,4 +68,37 @@ pub fn db_backup(state: State<'_, AppState>, dest: String) -> AppResult<()> {
     };
     crate::activity::record_quiet(&state.db, "backup", "database_backup", None, status, None);
     res
+}
+
+#[tauri::command]
+pub fn db_backup_inspect(path: String) -> AppResult<crate::db::restore::BackupInfo> {
+    crate::db::restore::inspect(std::path::Path::new(&path))
+}
+
+/// Yedeği doğrular ve bir sonraki açılışta geri yüklenmek üzere hazırlar.
+#[tauri::command]
+pub fn db_restore_schedule(
+    state: State<'_, AppState>,
+    path: String,
+) -> AppResult<crate::db::restore::BackupInfo> {
+    let info = crate::db::restore::schedule(&state.data_dir, std::path::Path::new(&path))?;
+    crate::activity::record_quiet(
+        &state.db,
+        "backup",
+        "database_restore_scheduled",
+        None,
+        crate::activity::Status::Ok,
+        None,
+    );
+    Ok(info)
+}
+
+#[tauri::command]
+pub fn db_restore_cancel(state: State<'_, AppState>) -> AppResult<()> {
+    crate::db::restore::cancel(&state.data_dir)
+}
+
+#[tauri::command]
+pub fn db_restore_pending(state: State<'_, AppState>) -> bool {
+    crate::db::restore::is_pending(&state.data_dir)
 }

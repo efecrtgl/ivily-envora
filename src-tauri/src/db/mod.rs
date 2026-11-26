@@ -1,6 +1,7 @@
 //! SQLite veritabanı: bağlantı, geçişler, bütünlük denetimi ve yedekleme.
 
 pub mod migrations;
+pub mod restore;
 
 use crate::error::{AppError, AppResult};
 use parking_lot::Mutex;
