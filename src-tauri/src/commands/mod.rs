@@ -11,3 +11,4 @@ pub mod path;
 pub mod profiles;
 pub mod projects;
 pub mod settings;
+pub mod snapshots;
