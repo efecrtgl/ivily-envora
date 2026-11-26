@@ -10,10 +10,11 @@ pub struct Migration {
     pub sql: &'static str,
 }
 
-pub const MIGRATIONS: &[Migration] = &[Migration {
-    version: 1,
-    name: "settings_and_activity",
-    sql: r#"
+pub const MIGRATIONS: &[Migration] = &[
+    Migration {
+        version: 1,
+        name: "settings_and_activity",
+        sql: r#"
         CREATE TABLE settings (
             key        TEXT PRIMARY KEY,
             value      TEXT NOT NULL,
@@ -34,7 +35,22 @@ pub const MIGRATIONS: &[Migration] = &[Migration {
         CREATE INDEX idx_activity_ts ON activity(ts DESC);
         CREATE INDEX idx_activity_category ON activity(category, ts DESC);
     "#,
-}];
+    },
+    Migration {
+        version: 2,
+        name: "sensitivity_overrides",
+        sql: r#"
+        -- Kullanıcının hassasiyet sınıflandırmasını geçersiz kıldığı değişken adları.
+        -- name_key büyük harfe çevrilmiş addır (Windows adları büyük/küçük harfe duyarsızdır).
+        CREATE TABLE sensitivity_overrides (
+            name_key   TEXT PRIMARY KEY,
+            name       TEXT NOT NULL,
+            sensitive  INTEGER NOT NULL CHECK (sensitive IN (0, 1)),
+            updated_at TEXT NOT NULL
+        );
+    "#,
+    },
+];
 
 pub fn latest_version() -> i64 {
     MIGRATIONS.last().map(|m| m.version).unwrap_or(0)

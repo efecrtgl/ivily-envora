@@ -5,6 +5,7 @@
 pub mod activity;
 pub mod commands;
 pub mod db;
+pub mod env;
 pub mod error;
 pub mod security;
 pub mod settings;
@@ -31,6 +32,12 @@ pub fn run() {
             commands::settings::settings_reset,
             commands::settings::db_status,
             commands::settings::db_backup,
+            commands::env::env_list,
+            commands::env::env_overview,
+            commands::env::env_detail,
+            commands::env::env_reveal,
+            commands::env::sensitivity_set,
+            commands::env::sensitivity_list,
         ])
         .run(tauri::generate_context!())
         .expect("Ivily Envora başlatılamadı");

@@ -35,7 +35,14 @@ pub fn settings_reset(state: State<'_, AppState>) -> AppResult<Settings> {
     let s = Settings::default();
     settings::save(&state.db, &s)?;
     *state.settings.write() = s.clone();
-    crate::activity::record_quiet(&state.db, "settings", "reset", None, crate::activity::Status::Ok, None);
+    crate::activity::record_quiet(
+        &state.db,
+        "settings",
+        "reset",
+        None,
+        crate::activity::Status::Ok,
+        None,
+    );
     Ok(s)
 }
 
@@ -52,7 +59,11 @@ pub fn db_backup(state: State<'_, AppState>, dest: String) -> AppResult<()> {
         return Err(AppError::validation("invalid_path", "mutlak yol gerekli"));
     }
     let res = state.db.backup_to(&path);
-    let status = if res.is_ok() { crate::activity::Status::Ok } else { crate::activity::Status::Failed };
+    let status = if res.is_ok() {
+        crate::activity::Status::Ok
+    } else {
+        crate::activity::Status::Failed
+    };
     crate::activity::record_quiet(&state.db, "backup", "database_backup", None, status, None);
     res
 }

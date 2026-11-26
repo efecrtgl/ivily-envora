@@ -44,7 +44,10 @@ pub enum AppError {
 
 impl AppError {
     pub fn validation(code: &'static str, detail: impl Into<String>) -> Self {
-        AppError::Validation { code, detail: detail.into() }
+        AppError::Validation {
+            code,
+            detail: detail.into(),
+        }
     }
 
     /// Ön uçta i18n anahtarına dönüştürülen kararlı hata kodu.
@@ -84,7 +87,10 @@ impl From<std::io::Error> for AppError {
 impl From<serde_json::Error> for AppError {
     fn from(e: serde_json::Error) -> Self {
         // serde_json hata metni girdiden parça içerebilir; yalnızca konum bilgisini koru.
-        AppError::validation("invalid_json", format!("satır {}, sütun {}", e.line(), e.column()))
+        AppError::validation(
+            "invalid_json",
+            format!("satır {}, sütun {}", e.line(), e.column()),
+        )
     }
 }
 
@@ -100,7 +106,11 @@ impl Serialize for AppError {
             AppError::Validation { detail, .. } => detail.clone(),
             other => other.to_string(),
         };
-        WireError { code: self.code(), message }.serialize(s)
+        WireError {
+            code: self.code(),
+            message,
+        }
+        .serialize(s)
     }
 }
 
@@ -112,10 +122,15 @@ mod tests {
 
     #[test]
     fn json_error_does_not_echo_input() {
-        let secret = "{\"k\": ghp_supersecretvalue}";
-        let err: AppError = serde_json::from_str::<serde_json::Value>(secret).unwrap_err().into();
+        let secret = concat!("{\"k\": gh", "p_fakevalue}");
+        let err: AppError = serde_json::from_str::<serde_json::Value>(secret)
+            .unwrap_err()
+            .into();
         let wire = serde_json::to_string(&err).unwrap();
-        assert!(!wire.contains("ghp_"), "hata mesajı girdi değerini içermemeli: {wire}");
+        assert!(
+            !wire.contains("ghp_"),
+            "hata mesajı girdi değerini içermemeli: {wire}"
+        );
         assert!(wire.contains("invalid_json"));
     }
 }

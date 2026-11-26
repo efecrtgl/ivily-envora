@@ -1,6 +1,7 @@
 //! Uygulama durumu ve veri dizini.
 
 use crate::db::Db;
+use crate::env::EnvProvider;
 use crate::error::{AppError, AppResult};
 use crate::settings::{self, Settings};
 use parking_lot::RwLock;
@@ -8,6 +9,7 @@ use std::path::PathBuf;
 
 pub struct AppState {
     pub db: Db,
+    pub provider: Box<dyn EnvProvider>,
     pub settings: RwLock<Settings>,
     pub data_dir: PathBuf,
     /// Veritabanı açılamadıysa uygulama bellek içi veritabanıyla açılır ve bu alan dolar.
@@ -34,17 +36,26 @@ impl AppState {
                 Some(e.to_string()),
             ),
         };
-        let (settings, fixed) = settings::load(&db).unwrap_or_else(|_| (Settings::default(), vec!["*".into()]));
+        let (settings, fixed) =
+            settings::load(&db).unwrap_or_else(|_| (Settings::default(), vec!["*".into()]));
         if settings.activity.enabled {
             let _ = crate::activity::prune(&db, settings.activity.retention_days);
         }
-        AppState { db, settings: RwLock::new(settings), data_dir: dir, degraded, settings_fixed: fixed }
+        AppState {
+            db,
+            provider: Box::new(crate::env::windows::WindowsProvider::new()),
+            settings: RwLock::new(settings),
+            data_dir: dir,
+            degraded,
+            settings_fixed: fixed,
+        }
     }
 
     #[cfg(test)]
     pub fn for_tests() -> AppState {
         AppState {
             db: Db::open_in_memory().unwrap(),
+            provider: Box::new(crate::env::MemoryProvider::new()),
             settings: RwLock::new(Settings::default()),
             data_dir: std::env::temp_dir(),
             degraded: None,

@@ -28,7 +28,10 @@ impl Db {
             std::fs::create_dir_all(dir)?;
         }
         let conn = Connection::open(path)?;
-        let db = Db { conn: Mutex::new(conn), path: Some(path.to_path_buf()) };
+        let db = Db {
+            conn: Mutex::new(conn),
+            path: Some(path.to_path_buf()),
+        };
         db.configure(true)?;
         db.migrate()?;
         Ok(db)
@@ -36,7 +39,10 @@ impl Db {
 
     /// Testler için bellek içi veritabanı.
     pub fn open_in_memory() -> AppResult<Self> {
-        let db = Db { conn: Mutex::new(Connection::open_in_memory()?), path: None };
+        let db = Db {
+            conn: Mutex::new(Connection::open_in_memory()?),
+            path: None,
+        };
         db.configure(false)?;
         db.migrate()?;
         Ok(db)
@@ -56,7 +62,10 @@ impl Db {
     }
 
     pub fn schema_version(&self) -> AppResult<i64> {
-        Ok(self.conn.lock().pragma_query_value(None, "user_version", |r| r.get(0))?)
+        Ok(self
+            .conn
+            .lock()
+            .pragma_query_value(None, "user_version", |r| r.get(0))?)
     }
 
     fn migrate(&self) -> AppResult<()> {
@@ -69,10 +78,14 @@ impl Db {
                 "veritabanı şeması ({current}) bu uygulama sürümünden ({latest}) daha yeni"
             )));
         }
-        for m in migrations::MIGRATIONS.iter().filter(|m| m.version > current) {
+        for m in migrations::MIGRATIONS
+            .iter()
+            .filter(|m| m.version > current)
+        {
             let tx = c.transaction()?;
-            tx.execute_batch(m.sql)
-                .map_err(|e| AppError::Database(format!("geçiş {} ({}) başarısız: {e}", m.version, m.name)))?;
+            tx.execute_batch(m.sql).map_err(|e| {
+                AppError::Database(format!("geçiş {} ({}) başarısız: {e}", m.version, m.name))
+            })?;
             tx.pragma_update(None, "user_version", m.version)?;
             tx.commit()?;
         }
@@ -95,7 +108,10 @@ impl Db {
     }
 
     pub fn integrity_check(&self) -> AppResult<bool> {
-        let res: String = self.conn.lock().query_row("PRAGMA integrity_check", [], |r| r.get(0))?;
+        let res: String = self
+            .conn
+            .lock()
+            .query_row("PRAGMA integrity_check", [], |r| r.get(0))?;
         Ok(res == "ok")
     }
 
@@ -104,7 +120,9 @@ impl Db {
         if dest.exists() {
             return Err(AppError::Conflict("yedek dosyası zaten var".into()));
         }
-        let dest_str = dest.to_str().ok_or_else(|| AppError::validation("invalid_path", "yol UTF-8 değil"))?;
+        let dest_str = dest
+            .to_str()
+            .ok_or_else(|| AppError::validation("invalid_path", "yol UTF-8 değil"))?;
         self.conn.lock().execute("VACUUM INTO ?1", [dest_str])?;
         Ok(())
     }
@@ -143,13 +161,20 @@ mod tests {
         {
             let db = Db::open(&path).unwrap();
             db.with(|c| {
-                c.execute("INSERT INTO settings(key, value, updated_at) VALUES ('k', '1', 'now')", [])?;
+                c.execute(
+                    "INSERT INTO settings(key, value, updated_at) VALUES ('k', '1', 'now')",
+                    [],
+                )?;
                 Ok(())
             })
             .unwrap();
         }
         let db = Db::open(&path).unwrap();
-        let v: String = db.with(|c| Ok(c.query_row("SELECT value FROM settings WHERE key='k'", [], |r| r.get(0))?)).unwrap();
+        let v: String = db
+            .with(
+                |c| Ok(c.query_row("SELECT value FROM settings WHERE key='k'", [], |r| r.get(0))?),
+            )
+            .unwrap();
         assert_eq!(v, "1");
         assert_eq!(db.schema_version().unwrap(), migrations::latest_version());
     }
@@ -169,11 +194,16 @@ mod tests {
     fn transaction_rolls_back_on_error() {
         let db = Db::open_in_memory().unwrap();
         let r: AppResult<()> = db.tx(|tx| {
-            tx.execute("INSERT INTO settings(key, value, updated_at) VALUES ('a', '1', 'now')", [])?;
+            tx.execute(
+                "INSERT INTO settings(key, value, updated_at) VALUES ('a', '1', 'now')",
+                [],
+            )?;
             Err(AppError::Internal("boom".into()))
         });
         assert!(r.is_err());
-        let n: i64 = db.with(|c| Ok(c.query_row("SELECT COUNT(*) FROM settings", [], |r| r.get(0))?)).unwrap();
+        let n: i64 = db
+            .with(|c| Ok(c.query_row("SELECT COUNT(*) FROM settings", [], |r| r.get(0))?))
+            .unwrap();
         assert_eq!(n, 0);
     }
 
@@ -185,6 +215,9 @@ mod tests {
         db.backup_to(&dest).unwrap();
         let copy = Db::open(&dest).unwrap();
         assert!(copy.integrity_check().unwrap());
-        assert!(db.backup_to(&dest).is_err(), "var olan dosyanın üzerine yazmamalı");
+        assert!(
+            db.backup_to(&dest).is_err(),
+            "var olan dosyanın üzerine yazmamalı"
+        );
     }
 }

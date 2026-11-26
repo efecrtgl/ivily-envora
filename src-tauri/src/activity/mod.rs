@@ -52,11 +52,21 @@ pub struct Query {
     pub order: Option<String>,
 }
 
-const FORBIDDEN_KEYS: &[&str] = &["value", "values", "oldValue", "newValue", "old_value", "new_value", "secret"];
+const FORBIDDEN_KEYS: &[&str] = &[
+    "value",
+    "values",
+    "oldValue",
+    "newValue",
+    "old_value",
+    "new_value",
+    "secret",
+];
 
 fn contains_value_key(v: &Value) -> bool {
     match v {
-        Value::Object(map) => map.iter().any(|(k, v)| FORBIDDEN_KEYS.contains(&k.as_str()) || contains_value_key(v)),
+        Value::Object(map) => map
+            .iter()
+            .any(|(k, v)| FORBIDDEN_KEYS.contains(&k.as_str()) || contains_value_key(v)),
         Value::Array(xs) => xs.iter().any(contains_value_key),
         _ => false,
     }
@@ -73,7 +83,9 @@ pub fn record(
 ) -> AppResult<()> {
     if let Some(d) = &details {
         if contains_value_key(d) {
-            return Err(AppError::Internal("etkinlik ayrıntıları değer alanı içeremez".into()));
+            return Err(AppError::Internal(
+                "etkinlik ayrıntıları değer alanı içeremez".into(),
+            ));
         }
     }
     let ts = chrono::Utc::now().to_rfc3339();
@@ -88,14 +100,23 @@ pub fn record(
 }
 
 /// Etkinlik kaydı başarısız olsa bile asıl işlemi bozmayan yardımcı.
-pub fn record_quiet(db: &Db, category: &str, action: &str, target: Option<&str>, status: Status, details: Option<Value>) {
+pub fn record_quiet(
+    db: &Db,
+    category: &str,
+    action: &str,
+    target: Option<&str>,
+    status: Status,
+    details: Option<Value>,
+) {
     let _ = record(db, category, action, target, status, details);
 }
 
 pub fn list(db: &Db, q: &Query) -> AppResult<Vec<Entry>> {
     let limit = q.limit.unwrap_or(200).min(1000) as i64;
     let asc = q.order.as_deref() == Some("asc");
-    let mut sql = String::from("SELECT id, ts, category, action, target, status, details FROM activity WHERE 1=1");
+    let mut sql = String::from(
+        "SELECT id, ts, category, action, target, status, details FROM activity WHERE 1=1",
+    );
     let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     if let Some(cat) = q.category.as_ref().filter(|s| !s.is_empty()) {
         sql.push_str(" AND category = ?");
@@ -105,9 +126,19 @@ pub fn list(db: &Db, q: &Query) -> AppResult<Vec<Entry>> {
         sql.push_str(" AND status = ?");
         args.push(Box::new(st.clone()));
     }
-    if let Some(s) = q.search.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+    if let Some(s) = q
+        .search
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+    {
         sql.push_str(" AND (action LIKE ? ESCAPE '\\' OR target LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\')");
-        let pat = format!("%{}%", s.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
+        let pat = format!(
+            "%{}%",
+            s.replace('\\', "\\\\")
+                .replace('%', "\\%")
+                .replace('_', "\\_")
+        );
         for _ in 0..3 {
             args.push(Box::new(pat.clone()));
         }
@@ -116,23 +147,30 @@ pub fn list(db: &Db, q: &Query) -> AppResult<Vec<Entry>> {
         sql.push_str(if asc { " AND id > ?" } else { " AND id < ?" });
         args.push(Box::new(b));
     }
-    sql.push_str(if asc { " ORDER BY id ASC LIMIT ?" } else { " ORDER BY id DESC LIMIT ?" });
+    sql.push_str(if asc {
+        " ORDER BY id ASC LIMIT ?"
+    } else {
+        " ORDER BY id DESC LIMIT ?"
+    });
     args.push(Box::new(limit));
 
     db.with(|c| {
         let mut stmt = c.prepare(&sql)?;
-        let rows = stmt.query_map(rusqlite::params_from_iter(args.iter().map(|a| a.as_ref())), |r| {
-            let details: Option<String> = r.get(6)?;
-            Ok(Entry {
-                id: r.get(0)?,
-                ts: r.get(1)?,
-                category: r.get(2)?,
-                action: r.get(3)?,
-                target: r.get(4)?,
-                status: r.get(5)?,
-                details: details.and_then(|d| serde_json::from_str(&d).ok()),
-            })
-        })?;
+        let rows = stmt.query_map(
+            rusqlite::params_from_iter(args.iter().map(|a| a.as_ref())),
+            |r| {
+                let details: Option<String> = r.get(6)?;
+                Ok(Entry {
+                    id: r.get(0)?,
+                    ts: r.get(1)?,
+                    category: r.get(2)?,
+                    action: r.get(3)?,
+                    target: r.get(4)?,
+                    status: r.get(5)?,
+                    details: details.and_then(|d| serde_json::from_str(&d).ok()),
+                })
+            },
+        )?;
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
     })
 }
@@ -155,17 +193,38 @@ mod tests {
     #[test]
     fn records_and_filters() {
         let db = Db::open_in_memory().unwrap();
-        record(&db, "variable", "set", Some("JAVA_HOME"), Status::Ok, Some(json!({"scope": "user"}))).unwrap();
+        record(
+            &db,
+            "variable",
+            "set",
+            Some("JAVA_HOME"),
+            Status::Ok,
+            Some(json!({"scope": "user"})),
+        )
+        .unwrap();
         record(&db, "path", "reorder", None, Status::Failed, None).unwrap();
         assert_eq!(list(&db, &Query::default()).unwrap().len(), 2);
-        let q = Query { category: Some("path".into()), ..Default::default() };
+        let q = Query {
+            category: Some("path".into()),
+            ..Default::default()
+        };
         let r = list(&db, &q).unwrap();
         assert_eq!(r.len(), 1);
         assert_eq!(r[0].status, "failed");
-        let q = Query { search: Some("java".into()), ..Default::default() };
+        let q = Query {
+            search: Some("java".into()),
+            ..Default::default()
+        };
         assert_eq!(list(&db, &q).unwrap().len(), 1);
-        let q = Query { search: Some("%".into()), ..Default::default() };
-        assert_eq!(list(&db, &q).unwrap().len(), 0, "LIKE joker karakterleri kaçışlanmalı");
+        let q = Query {
+            search: Some("%".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            list(&db, &q).unwrap().len(),
+            0,
+            "LIKE joker karakterleri kaçışlanmalı"
+        );
     }
 
     #[test]

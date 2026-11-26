@@ -47,7 +47,8 @@ pub fn protect_str(value: &str) -> AppResult<Vec<u8>> {
 }
 
 pub fn unprotect_str(data: &[u8]) -> AppResult<String> {
-    String::from_utf8(unprotect(data)?).map_err(|_| AppError::Vault("çözülen veri geçerli UTF-8 değil".into()))
+    String::from_utf8(unprotect(data)?)
+        .map_err(|_| AppError::Vault("çözülen veri geçerli UTF-8 değil".into()))
 }
 
 #[cfg(windows)]
@@ -56,12 +57,15 @@ mod imp {
     use crate::error::{AppError, AppResult};
     use windows::Win32::Foundation::{LocalFree, HLOCAL};
     use windows::Win32::Security::Cryptography::{
-        CryptProtectData, CryptUnprotectData, CRYPTPROTECT_LOCAL_MACHINE, CRYPTPROTECT_UI_FORBIDDEN,
-        CRYPT_INTEGER_BLOB,
+        CryptProtectData, CryptUnprotectData, CRYPTPROTECT_LOCAL_MACHINE,
+        CRYPTPROTECT_UI_FORBIDDEN, CRYPT_INTEGER_BLOB,
     };
 
     fn blob(data: &[u8]) -> CRYPT_INTEGER_BLOB {
-        CRYPT_INTEGER_BLOB { cbData: data.len() as u32, pbData: data.as_ptr() as *mut u8 }
+        CRYPT_INTEGER_BLOB {
+            cbData: data.len() as u32,
+            pbData: data.as_ptr() as *mut u8,
+        }
     }
 
     /// DPAPI'nin ayırdığı çıktı belleğini kopyalayıp serbest bırakır.
@@ -91,8 +95,16 @@ mod imp {
         let entropy = blob(ENTROPY);
         let mut out = CRYPT_INTEGER_BLOB::default();
         unsafe {
-            CryptUnprotectData(&input, None, Some(&entropy), None, None, CRYPTPROTECT_UI_FORBIDDEN, &mut out)
-                .map_err(|e| AppError::Vault(format!("CryptUnprotectData: {e}")))?;
+            CryptUnprotectData(
+                &input,
+                None,
+                Some(&entropy),
+                None,
+                None,
+                CRYPTPROTECT_UI_FORBIDDEN,
+                &mut out,
+            )
+            .map_err(|e| AppError::Vault(format!("CryptUnprotectData: {e}")))?;
             Ok(take(out))
         }
     }
@@ -104,11 +116,15 @@ mod imp {
     use crate::error::{AppError, AppResult};
 
     pub fn protect(_plain: &[u8], _scope: VaultScope) -> AppResult<Vec<u8>> {
-        Err(AppError::Unsupported("güvenli depolama yalnızca Windows'ta kullanılabilir".into()))
+        Err(AppError::Unsupported(
+            "güvenli depolama yalnızca Windows'ta kullanılabilir".into(),
+        ))
     }
 
     pub fn unprotect(_data: &[u8]) -> AppResult<Vec<u8>> {
-        Err(AppError::Unsupported("güvenli depolama yalnızca Windows'ta kullanılabilir".into()))
+        Err(AppError::Unsupported(
+            "güvenli depolama yalnızca Windows'ta kullanılabilir".into(),
+        ))
     }
 }
 
@@ -121,7 +137,10 @@ mod tests {
         let secret = "sk-test-not-a-real-key-ÇĞİÖŞÜ";
         let enc = protect_str(secret).unwrap();
         assert!(enc.starts_with(MAGIC));
-        assert!(!enc.windows(secret.len()).any(|w| w == secret.as_bytes()), "şifreli veri düz metni içermemeli");
+        assert!(
+            !enc.windows(secret.len()).any(|w| w == secret.as_bytes()),
+            "şifreli veri düz metni içermemeli"
+        );
         assert_eq!(unprotect_str(&enc).unwrap(), secret);
     }
 

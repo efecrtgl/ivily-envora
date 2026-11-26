@@ -125,22 +125,39 @@ pub struct Ecosystem {
     pub iep_enabled: bool,
 }
 
-pub const DASHBOARD_SECTIONS: &[&str] =
-    &["overview", "pathHealth", "analysis", "security", "profiles", "projects", "tools", "activity"];
+pub const DASHBOARD_SECTIONS: &[&str] = &[
+    "overview",
+    "pathHealth",
+    "analysis",
+    "security",
+    "profiles",
+    "projects",
+    "tools",
+    "activity",
+];
 
 impl Default for General {
     fn default() -> Self {
-        General { language: "tr".into(), start_page: "dashboard".into() }
+        General {
+            language: "tr".into(),
+            start_page: "dashboard".into(),
+        }
     }
 }
 impl Default for Appearance {
     fn default() -> Self {
-        Appearance { theme: "system".into(), density: "comfortable".into(), reduce_motion: false }
+        Appearance {
+            theme: "system".into(),
+            density: "comfortable".into(),
+            reduce_motion: false,
+        }
     }
 }
 impl Default for Dashboard {
     fn default() -> Self {
-        Dashboard { sections: DASHBOARD_SECTIONS.iter().map(|s| s.to_string()).collect() }
+        Dashboard {
+            sections: DASHBOARD_SECTIONS.iter().map(|s| s.to_string()).collect(),
+        }
     }
 }
 impl Default for Security {
@@ -156,36 +173,59 @@ impl Default for Security {
 }
 impl Default for Backup {
     fn default() -> Self {
-        Backup { auto_snapshot_before_changes: true, max_auto_snapshots: 50 }
+        Backup {
+            auto_snapshot_before_changes: true,
+            max_auto_snapshots: 50,
+        }
     }
 }
 impl Default for Activity {
     fn default() -> Self {
-        Activity { enabled: true, retention_days: 90 }
+        Activity {
+            enabled: true,
+            retention_days: 90,
+        }
     }
 }
 impl Default for Notifications {
     fn default() -> Self {
-        Notifications { show_success: true, restart_hint: true }
+        Notifications {
+            show_success: true,
+            restart_hint: true,
+        }
     }
 }
 impl Default for Updates {
     fn default() -> Self {
-        Updates { channel: "stable".into(), check_on_startup: true }
+        Updates {
+            channel: "stable".into(),
+            check_on_startup: true,
+        }
     }
 }
 impl Default for Performance {
     fn default() -> Self {
-        Performance { probe_tool_versions: true, probe_timeout_ms: 3000 }
+        Performance {
+            probe_tool_versions: true,
+            probe_timeout_ms: 3000,
+        }
     }
 }
 impl Default for Workspace {
     fn default() -> Self {
-        Workspace { default_shell: "powershell".into() }
+        Workspace {
+            default_shell: "powershell".into(),
+        }
     }
 }
 
-fn one_of(field: &str, value: &mut String, allowed: &[&str], default: &str, fixed: &mut Vec<String>) {
+fn one_of(
+    field: &str,
+    value: &mut String,
+    allowed: &[&str],
+    default: &str,
+    fixed: &mut Vec<String>,
+) {
     if !allowed.contains(&value.as_str()) {
         *value = default.to_string();
         fixed.push(field.to_string());
@@ -203,7 +243,13 @@ impl Settings {
     /// Geçersiz alanları düzeltir ve düzeltilen alanların adlarını döndürür.
     pub fn normalize(&mut self) -> Vec<String> {
         let mut f = Vec::new();
-        one_of("general.language", &mut self.general.language, &["tr", "en"], "tr", &mut f);
+        one_of(
+            "general.language",
+            &mut self.general.language,
+            &["tr", "en"],
+            "tr",
+            &mut f,
+        );
         one_of(
             "general.startPage",
             &mut self.general.start_page,
@@ -211,23 +257,79 @@ impl Settings {
             "dashboard",
             &mut f,
         );
-        one_of("appearance.theme", &mut self.appearance.theme, &["system", "dark", "light"], "system", &mut f);
-        one_of("appearance.density", &mut self.appearance.density, &["comfortable", "compact"], "comfortable", &mut f);
-        one_of("updates.channel", &mut self.updates.channel, &["stable", "prerelease"], "stable", &mut f);
-        one_of("workspace.defaultShell", &mut self.workspace.default_shell, &["pwsh", "powershell", "cmd"], "powershell", &mut f);
+        one_of(
+            "appearance.theme",
+            &mut self.appearance.theme,
+            &["system", "dark", "light"],
+            "system",
+            &mut f,
+        );
+        one_of(
+            "appearance.density",
+            &mut self.appearance.density,
+            &["comfortable", "compact"],
+            "comfortable",
+            &mut f,
+        );
+        one_of(
+            "updates.channel",
+            &mut self.updates.channel,
+            &["stable", "prerelease"],
+            "stable",
+            &mut f,
+        );
+        one_of(
+            "workspace.defaultShell",
+            &mut self.workspace.default_shell,
+            &["pwsh", "powershell", "cmd"],
+            "powershell",
+            &mut f,
+        );
 
         let before = self.dashboard.sections.clone();
         let mut seen = std::collections::HashSet::new();
-        self.dashboard.sections.retain(|s| DASHBOARD_SECTIONS.contains(&s.as_str()) && seen.insert(s.clone()));
+        self.dashboard
+            .sections
+            .retain(|s| DASHBOARD_SECTIONS.contains(&s.as_str()) && seen.insert(s.clone()));
         if self.dashboard.sections != before {
             f.push("dashboard.sections".into());
         }
 
-        clamp("security.autoHideSeconds", &mut self.security.auto_hide_seconds, 0, 3600, &mut f);
-        clamp("security.clipboardClearSeconds", &mut self.security.clipboard_clear_seconds, 0, 600, &mut f);
-        clamp("backup.maxAutoSnapshots", &mut self.backup.max_auto_snapshots, 5, 1000, &mut f);
-        clamp("activity.retentionDays", &mut self.activity.retention_days, 1, 3650, &mut f);
-        clamp("performance.probeTimeoutMs", &mut self.performance.probe_timeout_ms, 500, 15000, &mut f);
+        clamp(
+            "security.autoHideSeconds",
+            &mut self.security.auto_hide_seconds,
+            0,
+            3600,
+            &mut f,
+        );
+        clamp(
+            "security.clipboardClearSeconds",
+            &mut self.security.clipboard_clear_seconds,
+            0,
+            600,
+            &mut f,
+        );
+        clamp(
+            "backup.maxAutoSnapshots",
+            &mut self.backup.max_auto_snapshots,
+            5,
+            1000,
+            &mut f,
+        );
+        clamp(
+            "activity.retentionDays",
+            &mut self.activity.retention_days,
+            1,
+            3650,
+            &mut f,
+        );
+        clamp(
+            "performance.probeTimeoutMs",
+            &mut self.performance.probe_timeout_ms,
+            500,
+            15000,
+            &mut f,
+        );
         f
     }
 
@@ -269,7 +371,12 @@ impl Settings {
 pub fn load(db: &Db) -> AppResult<(Settings, Vec<String>)> {
     let raw: Option<String> = db.with(|c| {
         use rusqlite::OptionalExtension;
-        Ok(c.query_row("SELECT value FROM settings WHERE key = ?1", [KEY], |r| r.get(0)).optional()?)
+        Ok(
+            c.query_row("SELECT value FROM settings WHERE key = ?1", [KEY], |r| {
+                r.get(0)
+            })
+            .optional()?,
+        )
     })?;
     match raw {
         None => Ok((Settings::default(), Vec::new())),
@@ -351,7 +458,9 @@ mod tests {
 
     #[test]
     fn unknown_dashboard_sections_are_removed() {
-        let (s, _) = Settings::from_value_lenient(&json!({ "dashboard": { "sections": ["overview", "x", "overview"] } }));
+        let (s, _) = Settings::from_value_lenient(
+            &json!({ "dashboard": { "sections": ["overview", "x", "overview"] } }),
+        );
         assert_eq!(s.dashboard.sections, vec!["overview".to_string()]);
     }
 
