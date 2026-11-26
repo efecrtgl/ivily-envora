@@ -210,6 +210,7 @@ export default {
     duplicate_in_plan: 'The same variable appears more than once in the plan',
     invalid_kind: 'This value type cannot be written',
     invalid_plan: 'Invalid change plan',
+    invalid_extension: 'Cannot write this file type; allowed extensions',
     file_too_large: 'The file is too large',
     invalid_encoding: 'Unsupported file encoding (must be UTF-8 or UTF-16).',
     invalid_csv: 'Invalid CSV (required columns: name, value)',

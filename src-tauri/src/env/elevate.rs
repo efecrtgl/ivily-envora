@@ -114,6 +114,12 @@ pub fn maybe_run_helper_from_args() -> Option<i32> {
     };
     let plan_path = PathBuf::from(plan_path);
     let result_path = PathBuf::from(result_path);
+    let allowed = crate::state::data_dir()
+        .map(|d| d.join("elevate"))
+        .unwrap_or_default();
+    if !paths_allowed(&allowed, &plan_path, &result_path) {
+        return Some(3);
+    }
     let result = match std::fs::read(&plan_path) {
         Ok(bytes) => {
             let _ = std::fs::remove_file(&plan_path);
@@ -132,6 +138,27 @@ pub fn maybe_run_helper_from_args() -> Option<i32> {
         serde_json::to_vec(&result).unwrap_or_default(),
     );
     Some(if ok { 0 } else { 1 })
+}
+
+/// Plan ve sonuç dosyaları yalnızca uygulamanın `elevate` klasöründe olabilir; yardımcı başka
+/// bir konumdaki dosyayı okumayı veya oraya yazmayı reddeder.
+pub fn paths_allowed(dir: &Path, plan: &Path, result: &Path) -> bool {
+    let Ok(dir) = std::fs::canonicalize(dir) else {
+        return false;
+    };
+    let inside = |p: &Path| -> bool {
+        // Sonuç dosyası henüz yok; üst dizini kanonikleştir.
+        let parent = match p.parent() {
+            Some(x) => x,
+            None => return false,
+        };
+        let name_ok = p.file_name().is_some_and(|n| {
+            let n = n.to_string_lossy();
+            !n.contains("..") && (n.ends_with(".plan") || n.ends_with(".result.json"))
+        });
+        name_ok && std::fs::canonicalize(parent).is_ok_and(|c| c == dir)
+    };
+    inside(plan) && inside(result)
 }
 
 fn unique_name() -> String {
@@ -296,6 +323,40 @@ mod tests {
             !run_helper(&p, &unknown).ok,
             "bilinmeyen işlem türü reddedilmeli"
         );
+    }
+
+    #[test]
+    fn helper_only_accepts_files_in_elevate_dir() {
+        let root = tempfile::tempdir().unwrap();
+        let dir = root.path().join("elevate");
+        std::fs::create_dir_all(&dir).unwrap();
+        let other = root.path().join("other");
+        std::fs::create_dir_all(&other).unwrap();
+        assert!(paths_allowed(
+            &dir,
+            &dir.join("1.plan"),
+            &dir.join("1.result.json")
+        ));
+        assert!(!paths_allowed(
+            &dir,
+            &other.join("1.plan"),
+            &dir.join("1.result.json")
+        ));
+        assert!(!paths_allowed(
+            &dir,
+            &dir.join("1.plan"),
+            &other.join("x.result.json")
+        ));
+        assert!(!paths_allowed(
+            &dir,
+            &dir.join("..").join("other").join("1.plan"),
+            &dir.join("1.result.json")
+        ));
+        assert!(!paths_allowed(
+            &dir,
+            &dir.join("1.txt"),
+            &dir.join("1.result.json")
+        ));
     }
 
     #[test]

@@ -12,6 +12,29 @@ use serde_json::json;
 use std::path::{Path, PathBuf};
 use tauri::State;
 
+/// Yazma hedefinin uzantısı beklenen biçimlerden biri olmalı (yanlışlıkla/kötüye kullanımla
+/// yürütülebilir veya sistem dosyası yazılmasını önler).
+pub fn check_extension(path: &Path, allowed: &[&str]) -> AppResult<()> {
+    let ext = path
+        .extension()
+        .map(|e| e.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+    // `.env`, `.env.local` gibi adlar da kabul edilir.
+    let dotenv = allowed.contains(&"env") && (name == ".env" || name.starts_with(".env."));
+    if allowed.contains(&ext.as_str()) || dotenv {
+        Ok(())
+    } else {
+        Err(AppError::validation(
+            "invalid_extension",
+            allowed.join(", "),
+        ))
+    }
+}
+
 fn abs(path: &str) -> AppResult<PathBuf> {
     let p = PathBuf::from(path);
     if !p.is_absolute() {
@@ -174,6 +197,7 @@ pub fn export_write(
     include_sensitive: bool,
 ) -> AppResult<ExportResult> {
     let dest = abs(&path)?;
+    check_extension(&dest, &["json", "csv", "env", "txt"])?;
     let o = overrides::all(&state.db)?;
     let p = state.provider.as_ref();
     let (kind, out): (&str, Output) = match &request {
@@ -219,4 +243,21 @@ pub fn export_write(
         ),
     );
     Ok(out.result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::check_extension;
+    use std::path::Path;
+
+    #[test]
+    fn export_extensions() {
+        let ok = ["json", "csv", "env", "txt"];
+        assert!(check_extension(Path::new("C:\\x\\a.json"), &ok).is_ok());
+        assert!(check_extension(Path::new("C:\\x\\.env.local"), &ok).is_ok());
+        assert!(check_extension(Path::new("C:\\x\\a.ENV"), &ok).is_ok());
+        assert!(check_extension(Path::new("C:\\x\\evil.exe"), &ok).is_err());
+        assert!(check_extension(Path::new("C:\\x\\profile.ps1"), &ok).is_err());
+        assert!(check_extension(Path::new("C:\\x\\noext"), &ok).is_err());
+    }
 }

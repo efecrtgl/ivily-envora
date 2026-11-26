@@ -210,6 +210,7 @@ export default {
     duplicate_in_plan: 'Aynı değişken planda birden fazla kez geçiyor',
     invalid_kind: 'Bu değer türü yazılamaz',
     invalid_plan: 'Geçersiz değişiklik planı',
+    invalid_extension: 'Bu dosya türüne yazılamaz; izin verilen uzantılar',
     file_too_large: 'Dosya çok büyük',
     invalid_encoding: 'Dosya kodlaması desteklenmiyor (UTF-8 veya UTF-16 olmalı).',
     invalid_csv: 'Geçersiz CSV (gerekli sütunlar: name, value)',

@@ -60,6 +60,7 @@ pub fn db_backup(state: State<'_, AppState>, dest: String) -> AppResult<()> {
     if !path.is_absolute() {
         return Err(AppError::validation("invalid_path", "mutlak yol gerekli"));
     }
+    crate::commands::io::check_extension(&path, &["db"])?;
     let res = state.db.backup_to(&path);
     let status = if res.is_ok() {
         crate::activity::Status::Ok

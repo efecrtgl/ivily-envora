@@ -1,13 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Ana pencere için en az yetki. Dosya sistemi, kabuk ve HTTP eklentileri bilinçli olarak eklenmemiştir; dosya erişimi yalnızca Rust komutları üzerinden, kullanıcının iletişim kutusunda seçtiği yollarla yapılır.",
+  "description": "Ana pencere için en az yetki. Dosya sistemi, kabuk ve HTTP eklentileri bilinçli olarak eklenmemiştir; dosya erişimi yalnızca Rust komutları üzerinden, kullanıcının dosya iletişim kutusunda seçtiği yollarla yapılır.",
   "windows": ["main"],
-  "permissions": [
-    "core:default",
-    "dialog:allow-open",
-    "dialog:allow-save",
-    "dialog:allow-ask",
-    "dialog:allow-message"
-  ]
+  "permissions": ["core:default", "dialog:allow-open", "dialog:allow-save"]
 }
